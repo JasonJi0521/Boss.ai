@@ -1,0 +1,1840 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 鑰佹澘璁插骇 路 Broadside</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;700;900&family=Noto+Sans+SC:wght@400;500;700&family=LXGW+WenKai+TC&display=swap" rel="stylesheet">
+<style>
+
+/* === THEME VARIABLES === */
+:root {
+  --stage-bg: #111111;
+  --ink: #111111;
+  --ink-alt: #1a1a18;
+  --orange: #e85d26;
+  --cream: #f0ece5;
+  --muted: #888880;
+  --hint: #505048;
+  --border: #282826;
+  --font-display: 'Noto Serif SC', serif;
+  --font-body: 'LXGW WenKai TC', 'Noto Serif SC', serif;
+  --font-chrome: 'Noto Sans SC', sans-serif;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* === RESET === */
+* { box-sizing: border-box; }
+/* ===========================================
+   FIXED 16:9 STAGE: MANDATORY BASE STYLES
+   Include this ENTIRE file in every presentation.
+   Slides are authored at 1920脳1080 and scaled as a whole.
+   =========================================== */
+
+/* 1. Lock the browser viewport */
+html,
+body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+    background: var(--stage-bg, #000);
+}
+
+/* 2. Full-window deck viewport */
+.deck-viewport {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    background: var(--stage-bg, #000);
+}
+
+/* 3. Fixed 16:9 design canvas.
+   JavaScript sets transform: translate(...) scale(...). */
+.deck-stage {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    transform-origin: 0 0;
+    background: var(--slide-bg, #fff);
+}
+
+/* 4. Slides stack inside the fixed stage.
+   Content must be laid out at 1920脳1080, not reflowed per device. */
+.slide {
+    position: absolute;
+    inset: 0;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    display: block;
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    background: var(--slide-bg, #fff);
+}
+
+.slide.active,
+.slide.visible {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+    z-index: 1;
+}
+
+/* 5. Keep media inside authored slide bounds */
+img,
+video,
+canvas,
+svg {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+/* 6. Presentation chrome stays outside the slide design system */
+.deck-controls {
+    position: fixed;
+    left: 50%;
+    bottom: 22px;
+    transform: translateX(-50%);
+    z-index: 1000;
+}
+
+/* 7. Print one fixed-size slide per page */
+@media print {
+    html,
+    body {
+        width: 1920px;
+        height: auto;
+        overflow: visible;
+        background: #fff;
+    }
+
+    .deck-viewport {
+        position: static;
+        overflow: visible;
+        background: #fff;
+    }
+
+    .deck-stage {
+        position: static;
+        width: auto;
+        height: auto;
+        transform: none !important;
+        background: none;
+    }
+
+    .slide {
+        position: relative;
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        width: 1920px;
+        height: 1080px;
+        break-after: page;
+        page-break-after: always;
+    }
+
+    .slide:last-child {
+        break-after: auto;
+        page-break-after: auto;
+    }
+
+    .deck-controls {
+        display: none !important;
+    }
+}
+
+/* 8. Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.2s !important;
+    }
+}
+body { color: var(--cream); font-family: var(--font-body); }
+
+/* === SLIDE SURFACES === */
+.slide { --slide-bg: var(--ink); background: var(--ink); color: var(--cream); }
+.slide.orange { --slide-bg: var(--orange); background: var(--orange); color: var(--ink); }
+.slide.dark { --slide-bg: var(--ink); background: var(--ink); color: var(--cream); }
+.slide-pad { position: absolute; inset: 0; padding: 76px 92px 80px; }
+.declaration .slide-pad { padding: 96px 104px; }
+
+/* === CHROME === */
+.chrome {
+  display: flex;
+  justify-content: space-between;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 26px;
+  color: var(--muted);
+  font-family: var(--font-chrome);
+  font-size: 15px;
+  letter-spacing: 0;
+}
+.section-nav { display: inline-flex; align-items: center; gap: 14px; }
+.section-nav span { color: var(--cream); opacity: .72; }
+.section-nav em { color: var(--hint); font-style: normal; font-size: 13px; text-transform: uppercase; }
+.catalog {
+  position: absolute;
+  top: 56px;
+  left: 64px;
+  font-family: var(--font-chrome);
+  font-size: 28px;
+  color: rgba(17,17,17,.48);
+}
+.dark .catalog { color: var(--hint); }
+.kicker, .section-label {
+  color: var(--orange);
+  font-family: var(--font-chrome);
+  font-size: 19px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+.orange .kicker, .orange .section-label, .kicker.ink { color: rgba(17,17,17,.65); }
+
+/* === TYPOGRAPHY === */
+.title-block { margin-bottom: 30px; }
+.title-block h1,
+.statement h1,
+.question-slide > .slide-pad > h1,
+.four-steps > .slide-pad > h1,
+.end-slide h1 {
+  margin: 8px 0 0;
+  color: inherit;
+  font-family: var(--font-display);
+  font-size: 64px;
+  line-height: 1.16;
+  font-weight: 900;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+.declaration h1 { font-size: 112px; line-height: 1.12; }
+h3 {
+  margin: 0 0 12px;
+  font-family: var(--font-display);
+  font-size: 30px;
+  line-height: 1.22;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+p {
+  margin: 0 0 10px;
+  font-size: 20px;
+  line-height: 1.58;
+  color: var(--muted);
+}
+em { color: var(--cream); font-style: italic; opacity: .88; }
+strong { color: var(--cream); font-weight: 900; }
+.orange p, .orange em, .orange strong { color: rgba(17,17,17,.82); }
+.line::before {
+  content: "/";
+  margin-right: 10px;
+  color: var(--orange);
+  font-family: var(--font-chrome);
+  font-weight: 700;
+}
+.orange .line::before { color: rgba(17,17,17,.48); }
+
+/* === SHARED COMPONENTS === */
+.brand { display: inline-flex; align-items: center; gap: 12px; min-height: 48px; color: var(--cream); font-family: var(--font-chrome); font-size: 20px; font-weight: 700; }
+.brand img { width: 48px; height: 48px; object-fit: contain; background: var(--cream); padding: 6px; border: 1px solid var(--border); }
+.brand-text span { border: 1px solid var(--border); padding: 10px 14px; }
+.orange .brand { color: var(--ink); }
+.copy-card {
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+  min-width: 0;
+}
+.copy-card h3 { font-size: 26px; }
+.copy-card p { font-size: 18px; line-height: 1.5; }
+.stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px; margin-top: 18px; }
+.stat-card { border-top: 1px solid var(--border); padding-top: 16px; }
+.stat-value { color: var(--orange); font-family: var(--font-display); font-size: 58px; line-height: 1; font-weight: 900; }
+.stat-label { color: var(--cream); margin-top: 8px; font-size: 20px; line-height: 1.35; }
+.bottom-quote, .warning, .next-band {
+  border-top: 2px solid var(--orange);
+  padding-top: 16px;
+  color: var(--cream);
+  font-family: var(--font-display);
+  font-size: 34px;
+  line-height: 1.35;
+  font-weight: 900;
+}
+
+/* === ANIMATIONS === */
+.slide .slide-pad > * { opacity: 0; transform: translateY(24px); transition: opacity .55s var(--ease), transform .55s var(--ease); }
+.slide.visible .slide-pad > * { opacity: 1; transform: translateY(0); }
+.slide.visible .slide-pad > *:nth-child(2) { transition-delay: .06s; }
+.slide.visible .slide-pad > *:nth-child(3) { transition-delay: .12s; }
+.slide.visible .slide-pad > *:nth-child(4) { transition-delay: .18s; }
+
+/* === SPEAKER SLIDE === */
+.speaker-slide .slide-pad { padding: 82px 92px; }
+.speaker-grid-v3 { display: grid; grid-template-columns: .92fr 2.08fr; gap: 58px; align-items: stretch; height: 744px; }
+.speaker-profile { border-top: 2px solid var(--orange); padding-top: 34px; }
+.speaker-profile img { width: 252px; height: 252px; object-fit: cover; border-radius: 50%; border: 2px solid var(--orange); }
+.speaker-profile h2 { margin: 34px 0 20px; font-family: var(--font-display); font-size: 58px; line-height: 1; }
+.speaker-tags { display: grid; gap: 12px; }
+.speaker-tags span { border-top: 1px solid var(--border); padding-top: 12px; color: var(--muted); font-size: 22px; line-height: 1.28; }
+.identity-stack { display: grid; grid-template-rows: 1fr 1fr; gap: 30px; }
+.identity-stack .identity-card { padding: 34px 42px 30px; background: var(--ink-alt); border-top-width: 3px; }
+.identity-stack .identity-card h3 { font-size: 42px; }
+.identity-stack .identity-card p { font-size: 24px; line-height: 1.42; margin-bottom: 8px; }
+.identity-stack .role-icon { position: absolute; right: 42px; color: rgba(232,93,38,.38); font-size: 78px; margin: 0; }
+.speaker-grid { display: grid; grid-template-columns: 1fr 420px 1fr; gap: 46px; align-items: center; height: 760px; }
+.identity-card { border-top: 2px solid var(--orange); padding-top: 28px; }
+.identity-card h3 { font-size: 42px; }
+.identity-card p { font-size: 23px; line-height: 1.65; }
+.role-icon { color: var(--orange); font-family: var(--font-chrome); font-size: 44px; margin-bottom: 28px; }
+.portrait-wrap { position: relative; border-left: 1px solid var(--border); border-right: 1px solid var(--border); padding: 0 32px; }
+.portrait-wrap img { width: 312px; height: 456px; object-fit: cover; }
+.speaker-name { margin-top: 22px; font-family: var(--font-display); font-size: 34px; font-weight: 900; line-height: 1.25; text-align: center; }
+.merge-line { position: absolute; left: 50%; bottom: 72px; width: 2px; height: 74px; background: var(--orange); }
+
+/* === STEP AND AGENDA SLIDES === */
+.staircase { display: grid; grid-template-columns: repeat(3, 1fr); gap: 26px; align-items: end; height: 720px; }
+.step-card { border-top: 1px solid var(--border); padding: 28px 26px; background: var(--ink-alt); min-height: 360px; }
+.step-card:nth-child(2) { min-height: 460px; }
+.step-card:nth-child(3) { min-height: 560px; background: var(--orange); color: var(--ink); }
+.step-card:nth-child(3) p, .step-card:nth-child(3) h3 { color: var(--ink); }
+.step-card.active { border-top: 8px solid var(--orange); }
+.step-num { font-family: var(--font-display); color: var(--orange); font-size: 82px; font-weight: 900; line-height: 1; }
+.step-card:nth-child(3) .step-num { color: var(--ink); }
+.step-card h3 { font-size: 40px; }
+.step-card p { font-size: 24px; }
+.agenda { display: grid; grid-template-rows: repeat(6, 1fr); height: 770px; border-top: 1px solid var(--border); }
+.agenda-row { display: grid; grid-template-columns: 110px 1fr; align-items: center; border-bottom: 1px solid var(--border); }
+.agenda-row.current { background: var(--orange); color: var(--ink); padding-left: 24px; }
+.agenda-num { font-family: var(--font-display); font-size: 48px; font-weight: 900; color: var(--orange); }
+.current .agenda-num, .current .agenda-text, .current strong { color: var(--ink); }
+.agenda-text { font-size: 36px; line-height: 1.25; font-family: var(--font-display); font-weight: 900; }
+
+/* === STATEMENT SLIDES === */
+.statement { position: absolute; left: 104px; right: 104px; bottom: 120px; }
+.statement h1 { max-width: 1650px; white-space: normal; }
+.statement p { margin-top: 28px; max-width: 1000px; color: rgba(17,17,17,.78); font-size: 42px; line-height: 1.38; font-family: var(--font-display); font-weight: 900; }
+.split-question { background: var(--orange); color: var(--ink); }
+.split-question .slide-pad { padding: 0; display: grid; grid-template-columns: 1fr 1fr; height: 100%; }
+.split-left { position: relative; background: var(--ink); color: var(--cream); padding: 96px 76px; display: flex; flex-direction: column; justify-content: center; }
+.split-left .catalog { color: var(--hint); left: 64px; top: 58px; }
+.split-left p { color: var(--cream); font-family: var(--font-display); font-size: 72px; line-height: 1.16; font-weight: 900; }
+.split-right { padding: 126px 96px; display: flex; align-items: center; justify-content: center; }
+.split-right p { color: var(--ink); font-family: var(--font-display); font-size: 68px; line-height: 1.15; font-weight: 900; }
+
+/* === CASE SLIDES === */
+.case-head { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 28px; align-items: center; margin-bottom: 22px; }
+.case-head h1 { min-width: 0; max-width: 100%; font-family: var(--font-display); font-size: 50px; line-height: 1.16; white-space: nowrap; }
+.case-grid { display: grid; grid-template-columns: .98fr 1.02fr; gap: 34px; min-height: 560px; }
+.case-slide.has-stat-strip .case-grid { min-height: 500px; }
+.case-copy { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; align-content: start; }
+.case-copy .copy-card p { font-size: 15.4px; line-height: 1.42; }
+.case-copy .copy-card h3 { font-size: 23px; }
+.case-visual { border-top: 2px solid var(--orange); padding-top: 20px; min-width: 0; }
+.case-slide .stat-row { gap: 22px; margin-top: 22px; }
+.case-slide .stat-card { padding-top: 14px; }
+.case-slide .stat-value { font-size: 58px; color: var(--orange); }
+.case-slide .stat-label { font-size: 19px; line-height: 1.22; margin-top: 6px; color: var(--cream); }
+.mini-photo img { width: 86px; height: 86px; object-fit: cover; filter: grayscale(100%); border: 1px solid var(--border); }
+
+/* === CASE VISUALS === */
+.org-chart { height: 500px; display: grid; grid-template-rows: 110px 76px 1fr; gap: 18px; text-align: center; }
+.org-top img { width: 84px; height: 84px; object-fit: cover; filter: grayscale(100%); vertical-align: middle; margin-right: 14px; }
+.org-top, .org-mid, .org-roles div { border: 1px solid var(--border); padding: 18px; font-family: var(--font-display); font-size: 26px; font-weight: 900; }
+.org-mid { color: var(--orange); }
+.org-roles { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+.org-roles div { font-size: 20px; }
+.timeline-bars { padding: 80px 30px; }
+.bar-line { height: 86px; margin-bottom: 48px; background: var(--hint); display: flex; align-items: center; padding-left: 28px; font-family: var(--font-display); font-size: 42px; font-weight: 900; }
+.bar-line.short { width: 34%; background: var(--orange); color: var(--ink); }
+.bar-line.long { width: 90%; }
+.delta { color: var(--orange); font-family: var(--font-display); font-size: 92px; font-weight: 900; }
+.world-loop svg { width: 100%; height: 330px; }
+.world-loop path { fill: none; stroke: var(--muted); stroke-width: 4; }
+.world-loop .hot { fill: var(--orange); }
+.loop-chain { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-family: var(--font-display); font-size: 30px; font-weight: 900; }
+.loop-chain span { border-top: 1px solid var(--border); padding-top: 18px; }
+.loop-chain b { color: var(--orange); }
+.flow { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; padding-top: 90px; }
+.flow-node { border: 1px solid var(--border); padding: 28px 22px; min-width: 140px; text-align: center; font-family: var(--font-display); font-size: 28px; font-weight: 900; }
+.flow-node.end { background: var(--orange); color: var(--ink); }
+.flow-arrow { color: var(--orange); font-size: 34px; font-family: var(--font-display); }
+.branch { flex-basis: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 28px; }
+.branch span { border-top: 4px solid var(--orange); padding-top: 14px; font-size: 24px; }
+.store-visual { position: relative; height: 520px; }
+.store { position: absolute; left: 130px; top: 190px; width: 260px; height: 180px; border: 8px solid var(--orange); display: grid; place-items: center; font-family: var(--font-display); font-size: 54px; font-weight: 900; }
+.agent { position: absolute; border: 1px solid var(--border); padding: 20px; font-family: var(--font-display); font-size: 26px; font-weight: 900; background: var(--ink-alt); }
+.a1 { left: 420px; top: 80px; }.a2 { left: 440px; top: 240px; }.a3 { left: 380px; top: 400px; }
+.dialogue { display: grid; gap: 22px; padding: 55px 30px; }
+.bubble { border: 1px solid var(--border); padding: 28px; font-family: var(--font-display); font-size: 34px; font-weight: 900; }
+.bubble:nth-child(2) { margin-left: 100px; }
+.bubble:nth-child(3) { color: var(--orange); }
+.split { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.split span { background: var(--orange); color: var(--ink); padding: 26px; font-family: var(--font-display); font-size: 28px; font-weight: 900; text-align: center; }
+.pipeline { height: 520px; display: flex; align-items: center; justify-content: center; gap: 20px; }
+.pipeline div { border: 1px solid var(--border); padding: 34px 28px; font-family: var(--font-display); font-size: 34px; font-weight: 900; }
+.pipeline .machine { background: var(--orange); color: var(--ink); }
+.pipeline b { color: var(--orange); font-size: 40px; }
+.dashboard { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.dashboard div { min-height: 105px; border: 1px solid var(--border); padding: 20px; font-family: var(--font-display); font-size: 30px; font-weight: 900; }
+.dashboard .assistant { grid-column: 1 / 3; background: var(--orange); color: var(--ink); font-size: 46px; }
+.generated-visual { position: relative; height: 520px; border: 1px solid var(--border); overflow: hidden; padding: 30px; background: linear-gradient(135deg, rgba(232,93,38,.16), transparent 52%); }
+.generated-visual::before { content: ""; position: absolute; inset: 26px; border-top: 2px solid var(--orange); border-bottom: 1px solid var(--border); opacity: .95; }
+.visual-title { position: relative; z-index: 1; max-width: 520px; color: var(--cream); font-family: var(--font-display); font-size: 38px; line-height: 1.16; font-weight: 900; }
+.visual-nodes { position: absolute; left: 42px; right: 42px; bottom: 42px; z-index: 1; display: flex; flex-wrap: wrap; gap: 12px; }
+.visual-nodes span { border: 1px solid rgba(240,236,229,.22); background: var(--ink-alt); padding: 12px 14px; color: var(--cream); font-family: var(--font-chrome); font-size: 18px; }
+.visual-nodes span:nth-child(odd) { color: var(--orange); }
+.visual-orbit { position: absolute; right: 32px; top: 96px; width: 230px; height: 230px; border: 2px solid rgba(232,93,38,.55); transform: rotate(16deg); }
+.generated-image-panel { margin: 0; width: 100%; height: 500px; border: 1px solid var(--border); border-top: 4px solid var(--orange); overflow: hidden; background: #090908; display: grid; place-items: center; }
+.generated-image-panel img { width: 94%; height: 94%; object-fit: contain; display: block; }
+.overlay-panel { position: relative; display: block; }
+.overlay-panel img { width: 100%; height: 100%; object-fit: cover; max-width: none; max-height: none; }
+.visual-overlay { position: absolute; inset: 0; pointer-events: none; }
+.visual-overlay span { position: absolute; font-family: var(--font-display); font-weight: 900; color: var(--cream); text-shadow: 0 2px 10px rgba(0,0,0,.75); }
+.yc-ceo { left: 47%; top: 11%; transform: translateX(-50%); font-size: 24px; color: var(--ink) !important; background: var(--orange); padding: 5px 14px; text-shadow: none !important; }
+.yc-agent { left: 50%; top: 49%; transform: translateX(-50%); font-size: 22px; color: var(--orange) !important; }
+.yc-role { bottom: 17px; width: 14%; text-align: center; font-size: 22px; }
+.yc-role.r1 { left: 4%; }.yc-role.r2 { left: 20%; }.yc-role.r3 { left: 36%; }.yc-role.r4 { left: 52%; }.yc-role.r5 { left: 68%; }.yc-role.r6 { left: 84%; }
+.boss-ai-visual .boss-label { left: 43%; bottom: 18px; font-size: 28px; color: var(--orange); }
+.boss-ai-visual .agent-label { right: 7%; top: 13%; font-size: 30px; color: var(--cream); }
+.frontline-network-visual .frontline-site { left: 8%; top: 14%; font-size: 28px; }
+.frontline-network-visual .frontline-loop { left: 42%; bottom: 20px; font-size: 30px; color: var(--orange); }
+.frontline-network-visual .frontline-ai { right: 8%; top: 15%; font-size: 30px; color: var(--orange); }
+.yuto-speedwin-visual .flow-step { bottom: 22px; width: 22%; text-align: center; font-size: 28px; color: var(--orange); }
+.yuto-speedwin-visual .flow-step.f1 { left: 2%; }.yuto-speedwin-visual .flow-step.f2 { left: 27%; }.yuto-speedwin-visual .flow-step.f3 { left: 52%; }.yuto-speedwin-visual .flow-step.f4 { left: 76%; }
+.generated-page-bg { position: absolute; right: 92px; bottom: 92px; width: 720px; height: 450px; object-fit: cover; opacity: .16; filter: saturate(.75) contrast(1.1); pointer-events: none; border: 1px solid rgba(232,93,38,.22); }
+.image-backed .title-block,
+.image-backed .info-columns,
+.image-backed .person-agents { position: relative; z-index: 1; }
+
+/* === NEW V3 PAGES === */
+.growth-table { display: grid; grid-template-rows: 50px repeat(4, 1fr); height: 660px; border-top: 1px solid var(--border); }
+.growth-header { display: grid; grid-template-columns: 254px 270px 590px 430px; gap: 14px; align-items: center; border-bottom: 1px solid var(--border); color: var(--orange); font-family: var(--font-display); font-size: 29px; font-weight: 900; padding: 0 14px; }
+.growth-table article { display: grid; grid-template-columns: 70px 170px 270px 590px 430px; gap: 14px; align-items: center; border-bottom: 1px solid var(--border); padding: 10px 14px; }
+.growth-num { font-family: var(--font-display); color: var(--orange); font-size: 52px; font-weight: 900; }
+.growth-table article.active .growth-num, .growth-table article.active h3, .growth-table article.active p, .growth-table article.active strong, .growth-table article.active em { color: var(--cream); }
+.growth-table h3 { margin: 0; font-size: 33px; }
+.growth-table p { margin: 0; font-size: 18px; line-height: 1.24; color: rgba(240,236,229,.84); overflow-wrap: anywhere; }
+.growth-table h3 { color: var(--cream); }
+.platforms { display: flex; flex-wrap: wrap; gap: 8px; }
+.platform-chip { display: inline-flex; align-items: center; gap: 6px; min-width: 76px; border: 1px solid rgba(240,236,229,.28); background: rgba(240,236,229,.06); padding: 6px 7px; color: var(--cream); font-family: var(--font-chrome); font-size: 13px; line-height: 1; }
+.platform-chip b { display: inline-block; color: var(--cream) !important; font-weight: 700; font-size: 15px; white-space: nowrap; }
+.platform-chip img { width: 22px; height: 22px; object-fit: contain; background: var(--orange); padding: 4px; }
+.growth-table article.active .platform-chip { border-color: rgba(17,17,17,.34); background: rgba(17,17,17,.14); color: var(--ink); }
+.growth-table article.active .platform-chip b { color: var(--ink) !important; }
+.growth-table article.active .platform-chip img { background: var(--ink); filter: none; }
+.result-cell { max-width: 430px; }
+.result-cell strong { color: var(--orange) !important; font-family: var(--font-display); font-size: 38px; display: inline-block; line-height: 1; }
+.active .result-cell strong { color: var(--orange) !important; }
+.image-collage .title-block { margin-bottom: 18px; }
+.image-collage .title-block h1 { font-size: 50px; }
+.single-generated-image { position: relative; margin: 0; height: 660px; border: 1px solid var(--border); border-top: 8px solid var(--orange); overflow: hidden; background: #090908; display: grid; place-items: center; }
+.single-generated-image > img { width: 1173px !important; height: 660px !important; max-width: none !important; object-fit: contain; display: block; }
+.content-system-frame .content-overlay { position: absolute; left: 50%; top: 8px; width: 1173px; height: 660px; transform: translateX(-50%); pointer-events: none; font-family: var(--font-display); color: var(--cream); }
+.content-system-frame > img { position: absolute; inset: 0; width: 100% !important; height: 100% !important; object-fit: cover !important; opacity: .18; filter: saturate(.8) contrast(1.05); }
+.content-system-frame .content-overlay { left: 0; top: 0; width: 100%; height: 100%; transform: none; z-index: 1; }
+.content-overlay h2 { position: absolute; left: 66px; top: 36px; right: 66px; margin: 0; font-size: 31px; line-height: 1.13; font-weight: 900; color: var(--cream); }
+.content-overlay .cs-sub { position: absolute; left: 76px; top: 84px; margin: 0; color: rgba(240,236,229,.78); font-size: 20px; font-weight: 700; }
+.cs-callout { position: absolute; left: 145px; right: 145px; bottom: 48px; margin: 0; font-size: 25px; line-height: 1.24; font-weight: 900; color: var(--cream); }
+.cs-table { position: absolute; left: 5%; right: 5%; top: 20%; height: 57%; display: grid; grid-template-columns: 22% 31% 47%; grid-template-rows: 58px repeat(5, 1fr); border: 1px solid rgba(240,236,229,.32); background: rgba(9,9,8,.72); }
+.cs-table > div { display: flex; align-items: center; padding: 0 18px; font-size: 20px; line-height: 1.18; font-weight: 900; border-right: 1px solid rgba(240,236,229,.28); border-bottom: 1px solid rgba(240,236,229,.22); background: rgba(9,9,8,.34); }
+.cs-table > div:nth-child(3n) { border-right: 0; }
+.cs-table .cs-head { justify-content: center; font-size: 29px; color: var(--orange); }
+.cs-table .dim { color: var(--orange); font-size: 23px; }
+.content-overlay-2 h2 { left: 7%; top: 7%; font-size: 33px; }
+.content-overlay-2 .cs-sub { left: 7%; top: 14%; font-size: 18px; }
+.cs2-board { position: absolute; left: 5%; right: 5%; top: 22%; bottom: 6%; display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+.cs2-panel { position: relative; border: 1px solid rgba(240,236,229,.28); border-radius: 18px; background: rgba(9,9,8,.86); padding: 34px 34px 28px; overflow: hidden; }
+.cs2-panel::before { content: ""; position: absolute; left: 34px; right: 34px; top: 102px; border-top: 1px solid rgba(232,93,38,.42); }
+.cs2-panel h3 { margin: 0; color: var(--orange); text-align: center; font-size: 32px; line-height: 1; }
+.cs2-panel em { display: block; margin-top: 18px; color: var(--cream); text-align: center; font-size: 20px; font-style: normal; font-weight: 900; }
+.cs2-panel p { position: absolute; left: 0; right: 0; bottom: 30px; margin: 0; text-align: center; color: var(--orange); font-size: 24px; font-weight: 900; }
+.cs2-left p { color: var(--cream); }
+.cs2-flow { position: absolute; left: 44px; right: 44px; top: 205px; display: grid; grid-template-columns: 1fr 34px 1fr 34px 1fr 34px 1fr; align-items: center; }
+.cs2-flow span { height: 106px; border: 1px solid rgba(240,236,229,.35); border-top: 5px solid var(--orange); display: grid; place-items: center; background: rgba(17,17,17,.7); color: var(--cream); font-size: 20px; font-weight: 900; }
+.cs2-flow b { color: var(--orange); text-align: center; font-size: 28px; font-weight: 900; }
+.cs2-loop { position: absolute; left: 50%; top: 55%; width: 292px; height: 292px; transform: translate(-50%, -50%); border: 3px solid rgba(232,93,38,.62); border-radius: 50%; }
+.cs2-loop::before { content: ""; position: absolute; inset: 52px; border: 1px dashed rgba(232,93,38,.38); border-radius: 50%; }
+.cs2-loop strong { position: absolute; left: 50%; top: 50%; width: 92px; height: 92px; transform: translate(-50%, -50%); border: 1px solid rgba(232,93,38,.7); border-radius: 50%; display: grid; place-items: center; color: var(--orange); font-size: 42px; background: #090908; }
+.cs2-loop span { position: absolute; width: 128px; min-height: 44px; padding: 7px 9px; border: 1px solid rgba(232,93,38,.55); background: rgba(9,9,8,.96); color: var(--cream); text-align: center; font-size: 15px; line-height: 1.14; font-weight: 900; }
+.cs2-loop .n1 { left: 82px; top: 8px; }
+.cs2-loop .n2 { right: -66px; top: 98px; }
+.cs2-loop .n3 { right: 0; bottom: 22px; }
+.cs2-loop .n4 { left: 0; bottom: 22px; }
+.cs2-loop .n5 { left: -66px; top: 98px; }
+.content-overlay-3 h2 { font-size: 34px; max-width: 920px; }
+.cs-left-notes { position: absolute; left: 5%; top: 23%; width: 27%; background: rgba(9,9,8,.72); border: 1px solid rgba(240,236,229,.28); padding: 24px; }
+.cs-left-notes p { margin: 0 0 20px; font-size: 18px; line-height: 1.28; font-weight: 900; color: var(--cream); }
+.cs-left-notes p:first-child, .cs-left-notes p:nth-child(4) { color: var(--orange); }
+.cs-bars { position: absolute; top: 23%; width: 28%; background: rgba(9,9,8,.72); border: 1px solid rgba(240,236,229,.28); padding: 24px; }
+.cs-bars.classic { left: 36%; }.cs-bars.ai { right: 5%; border-color: rgba(232,93,38,.7); }
+.cs-bars h3 { margin: 0 0 26px; font-size: 22px; color: var(--cream); }
+.bar-row { display: grid; grid-template-columns: 112px 1fr 48px; align-items: center; gap: 10px; height: 48px; font-size: 17px; font-weight: 900; }
+.bar-row i { display: block; height: 18px; width: calc(var(--w) * 4px); max-width: 160px; background: linear-gradient(90deg, rgba(240,236,229,.7), rgba(240,236,229,.25)); border-radius: 2px; }
+.bar-row.ai i { background: var(--orange); }
+.bar-row b { font-size: 18px; color: var(--cream); }
+.content-overlay-4 h2 { font-size: 34px; right: 48%; }
+.content-overlay-4 .cs-sub { top: 92px; font-size: 21px; }
+.short-drama-original { position: absolute; left: 5%; top: 19%; width: 42%; height: 48%; overflow: hidden; border: 1px solid rgba(232,93,38,.5); background: #090908; box-shadow: 0 0 0 999px rgba(0,0,0,0); }
+.short-drama-original img { width: 100%; height: 100%; object-fit: cover; object-position: left center; filter: none; }
+.poster-note { position: absolute; left: 8%; top: 69%; font-size: 42px; font-weight: 900; color: var(--orange); }
+.cs-section { position: absolute; right: 4.5%; width: 42%; min-height: 112px; padding: 15px 22px 15px 78px; background: rgba(9,9,8,.82); border: 1px solid rgba(232,93,38,.42); }
+.cs-section b { position: absolute; left: 0; top: 6px; width: 48px; height: 48px; border: 2px solid var(--orange); border-radius: 50%; display: grid; place-items: center; color: var(--orange); font-size: 20px; }
+.cs-section h3 { margin: 0 0 8px; font-size: 29px; color: var(--cream); }
+.cs-section p { margin: 4px 0; font-size: 16px; line-height: 1.24; font-weight: 700; color: rgba(240,236,229,.88); }
+.cs-section strong { color: var(--orange); }
+.cs-section.s1 { top: 16%; }.cs-section.s2 { top: 39%; }.cs-section.s3 { top: 64%; }
+.cs-metrics { position: absolute; left: 5%; width: 48%; bottom: 42px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.cs-metrics span { border: 1px solid rgba(240,236,229,.22); background: rgba(9,9,8,.72); padding: 14px 12px; color: var(--cream); font-size: 15px; font-weight: 900; min-height: 82px; }
+.cs-metrics b { display: block; color: var(--orange); font-size: 33px; line-height: 1; margin-bottom: 8px; }
+
+/* === PYRAMID AND TABLE === */
+.pyramid { width: 100%; height: 650px; display: flex; flex-direction: column-reverse; align-items: center; justify-content: center; gap: 0; }
+.pyramid-layer { padding: 26px 42px; border-top: 1px solid var(--border); text-align: center; }
+.pyramid-layer.l1 { width: 88%; background: var(--hint); }
+.pyramid-layer.l2 { width: 66%; background: var(--ink-alt); }
+.pyramid-layer.l3 { width: 44%; background: var(--orange); color: var(--ink); }
+.pyramid-layer.l3 p, .pyramid-layer.l3 h3 { color: var(--ink); }
+.pyramid-layer h3 { font-size: 36px; }
+.pyramid-layer p { font-size: 21px; }
+.compare-table { width: 100%; border-collapse: collapse; font-family: var(--font-body); }
+.compare-table th, .compare-table td { border-top: 1px solid var(--border); padding: 14px 16px; text-align: left; vertical-align: top; font-size: 21px; line-height: 1.35; }
+.compare-table th { color: var(--orange); font-family: var(--font-display); font-size: 25px; font-weight: 900; }
+.compare-table .hi { color: var(--cream); font-family: var(--font-display); font-weight: 900; }
+
+/* === TREND SLIDES === */
+.number-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+.number-grid article { border-top: 1px solid var(--border); padding-top: 18px; min-height: 200px; }
+.number-grid article.active { background: var(--orange); color: var(--ink); padding: 18px; }
+.number-grid article.active p { color: var(--ink); }
+.big-num { color: var(--orange); font-family: var(--font-display); font-size: 82px; font-weight: 900; line-height: 1; }
+.active .big-num { color: var(--ink); }
+.number-grid p { font-size: 26px; color: var(--cream); font-family: var(--font-display); font-weight: 900; line-height: 1.32; }
+.trend-rows { display: grid; grid-template-rows: repeat(6, 1fr); height: 620px; border-top: 1px solid var(--border); }
+.trend-rows article { display: grid; grid-template-columns: 120px 1fr; align-items: center; gap: 28px; border-bottom: 1px solid var(--border); padding: 0 18px; }
+.trend-rows article.active { background: var(--orange); color: var(--ink); }
+.trend-rows article.active p { color: var(--ink); }
+.trend-rows .big-num { color: var(--orange); font-size: 66px; }
+.trend-rows article.active .big-num { color: var(--ink); }
+.trend-rows p { margin: 0; color: var(--cream); font-family: var(--font-display); font-size: 31px; line-height: 1.25; font-weight: 900; }
+.dense-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.dense-grid article, .logo-grid article, .divide-grid article { border-top: 1px solid var(--border); padding-top: 18px; }
+.dense-grid h3 { color: var(--orange); font-size: 28px; }
+.dense-grid p { font-size: 20px; line-height: 1.5; }
+.info-columns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; align-items: start; }
+.info-columns article { border-top: 1px solid var(--border); padding-top: 22px; min-height: 555px; }
+.info-columns article.active { border-top: 8px solid var(--orange); }
+.info-columns h3 { color: var(--orange); font-size: 31px; line-height: 1.24; margin-bottom: 26px; }
+.info-columns p { font-size: 21px; line-height: 1.52; margin-bottom: 14px; }
+.info-columns .stat-line { color: var(--cream); font-family: var(--font-display); font-size: 36px; line-height: 1.1; font-weight: 900; margin: 26px 0 10px; }
+.info-columns .brand { margin-bottom: 28px; }
+.with-logos .info-columns h3 { min-height: 86px; }
+.production-team .info-columns article { min-height: 440px; }
+.production-team .info-columns .stat-line { font-size: 38px; color: var(--orange); }
+.divide-slide .info-columns article { min-height: 520px; }
+.divide-slide .info-columns .stat-line { font-size: 34px; }
+.knives-slide .company-silhouette { position: absolute; left: 680px; top: 360px; width: 560px; height: 270px; border: 4px solid var(--border); display: grid; place-items: center; font-family: var(--font-display); font-size: 70px; font-weight: 900; color: var(--hint); }
+.knife { position: absolute; width: 510px; border-top: 8px solid var(--orange); padding-top: 18px; }
+.knife.k1 { left: 92px; top: 235px; }.knife.k2 { right: 92px; top: 225px; }.knife.k3 { left: 704px; bottom: 84px; }
+.knife .copy-card { border: 0; }
+.logo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
+.logo-grid .brand { margin-bottom: 26px; }
+.logo-grid .copy-card { border: 0; }
+.person-agents { margin-top: 36px; height: 160px; display: flex; align-items: center; gap: 24px; font-family: var(--font-display); font-size: 42px; font-weight: 900; }
+.person-agents i { width: 82px; height: 82px; display: grid; place-items: center; border: 1px solid var(--border); color: var(--orange); font-style: normal; }
+.trend-line { margin: 10px 0 34px; font-family: var(--font-display); font-size: 42px; font-weight: 900; color: var(--muted); }
+.trend-line strong { color: var(--orange); font-size: 92px; }
+.divide-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 28px; }
+.divide-grid article.hot { background: var(--orange); color: var(--ink); padding: 22px; }
+.divide-grid article.hot p, .divide-grid article.hot h3, .divide-grid article.hot strong { color: var(--ink); }
+.funnel-slide .slide-pad { display: grid; grid-template-columns: .9fr 1.1fr; grid-template-rows: auto 1fr; gap: 20px; }
+.funnel-slide .chrome, .funnel-slide .title-block { grid-column: 1 / 3; }
+.funnel { display: flex; flex-direction: column; align-items: center; gap: 8px; justify-content: center; }
+.funnel-row { height: 66px; display: grid; place-items: center; background: var(--orange); color: var(--ink); font-family: var(--font-display); font-size: 34px; font-weight: 900; }
+.funnel-row.r0 { width: 620px; }.funnel-row.r1 { width: 500px; }.funnel-row.r2 { width: 380px; }.funnel-row.r3 { width: 270px; }.funnel-row.r4 { width: 180px; }
+.funnel-copy { display: grid; gap: 12px; align-content: start; }
+.funnel-copy .copy-card { padding-top: 12px; }
+.funnel-copy .copy-card h3 { font-size: 24px; margin-bottom: 8px; }
+.funnel-copy .copy-card p { font-size: 17px; line-height: 1.38; margin-bottom: 6px; }
+
+/* === QUESTION / ARCHITECTURE / SYSTEM === */
+.question-slide h1 { position: absolute; left: 104px; right: 104px; top: 126px; white-space: normal; }
+.two-question { position: absolute; left: 104px; top: 410px; display: grid; grid-template-columns: 1fr 1fr; gap: 34px; width: 1320px; }
+.two-question .copy-card, .dao-shu .copy-card { border-color: rgba(17,17,17,.22); }
+.two-question h3, .dao-shu h3 { color: var(--ink); }
+.two-question h3 { font-size: 34px; }
+.two-question p { font-size: 26px; }
+.dao-shu { position: absolute; left: 104px; bottom: 92px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; width: 1320px; }
+.dao-shu .copy-card { grid-column: 1 / 3; }
+.dao-shu h3 { font-size: 38px; }
+.dao-shu p { font-size: 25px; line-height: 1.52; }
+.architecture-slide .layers { display: flex; flex-direction: column; height: 650px; gap: 8px; }
+.layer { display: grid; grid-template-columns: 70px 190px 1fr 360px; align-items: center; min-height: 88px; border: 1px solid var(--border); padding: 0 26px; }
+.layer:first-child { background: var(--orange); color: var(--ink); border-color: var(--orange); clip-path: polygon(0 25%, 50% 0, 100% 25%, 100% 100%, 0 100%); padding-top: 16px; }
+.layer span { font-family: var(--font-display); font-size: 44px; font-weight: 900; color: var(--orange); }
+.layer:first-child span, .layer:first-child small, .layer:first-child em, .layer:first-child strong { color: var(--ink); }
+.layer strong { font-family: var(--font-display); font-size: 30px; color: var(--cream); }
+.layer em { font-style: normal; color: var(--muted); font-size: 24px; }
+.layer small { color: var(--hint); font-size: 20px; }
+.system-grid { display: grid; grid-template-columns: 1fr 1.25fr; gap: 34px; min-height: 690px; }
+.term-list, .judgement { border-top: 2px solid var(--orange); padding-top: 20px; }
+.term-list h3 { font-size: 34px; color: var(--orange); }
+.term-list p, .judgement p { font-size: 24px; line-height: 1.5; }
+.judgement h3 { font-size: 44px; line-height: 1.28; margin: 22px 0 32px; }
+.question-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 22px; margin-top: 20px; }
+.question-grid div { border-top: 1px solid var(--border); padding: 22px; font-family: var(--font-display); font-size: 34px; font-weight: 900; }
+.question-grid div.active { background: var(--orange); color: var(--ink); }
+.question-grid span { display: block; color: var(--orange); font-size: 44px; margin-bottom: 8px; }
+.question-grid div.active span { color: var(--ink); }
+.warning { margin-top: 28px; color: var(--orange); }
+
+/* === DAO METHOD SLIDES === */
+.four-steps h1 { position: absolute; left: 104px; top: 120px; }
+.steps-vertical { position: absolute; left: 104px; right: 104px; top: 290px; bottom: 92px; display: grid; grid-template-rows: repeat(4, 1fr); gap: 16px; }
+.steps-vertical article { display: grid; grid-template-columns: 120px 360px 1fr; align-items: center; gap: 22px; border-top: 1px solid rgba(17,17,17,.25); }
+.steps-vertical article.active { color: var(--ink); padding: 0; }
+.steps-vertical article div { font-family: var(--font-display); font-size: 54px; font-weight: 900; }
+.steps-vertical article h3 { color: inherit; font-size: 36px; margin: 0; }
+.steps-vertical article p { color: rgba(17,17,17,.76); font-size: 22px; margin: 0; }
+.steps-vertical article.active p { color: rgba(17,17,17,.76); }
+.method-grid { display: grid; grid-template-columns: 1.1fr .9fr; gap: 36px; }
+.method-slide.has-stat-strip .method-grid { min-height: 560px; }
+.method-copy { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; align-content: start; }
+.method-copy .copy-card p { font-size: 16.8px; line-height: 1.46; }
+.method-copy .copy-card h3 { font-size: 24px; }
+.method-visual { border-top: 2px solid var(--orange); padding-top: 22px; }
+.method-slide .generated-image-panel { height: 470px; }
+.method-slide .stat-row { margin-top: 24px; gap: 34px; }
+.method-slide .stat-card { padding-top: 14px; }
+.method-slide .stat-value { color: var(--orange); font-size: 60px; }
+.method-slide .stat-label { color: var(--cream); font-size: 20px; }
+.boss-agents { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+.boss-agents .brand { grid-column: 1 / 3; }
+.boss-agents div:not(.brand) { border: 1px solid var(--border); padding: 30px; font-family: var(--font-display); font-size: 30px; font-weight: 900; text-align: center; }
+.boss-agents .boss { background: var(--orange); color: var(--ink); }
+.network svg { width: 100%; height: 360px; }
+.network circle { fill: none; stroke: var(--orange); stroke-width: 5; }
+.network path { fill: none; stroke: var(--border); stroke-width: 4; }
+.ai-node { background: var(--orange); color: var(--ink); padding: 24px; text-align: center; font-family: var(--font-display); font-size: 32px; font-weight: 900; }
+.expansion .nodes { position: relative; height: 460px; margin-top: 20px; border-top: 1px solid var(--border); }
+.expansion i { position: absolute; left: calc(var(--x) * 1%); top: calc(var(--y) * 1%); width: 12px; height: 12px; background: var(--orange); }
+.summary-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin: 20px 0 30px; }
+.summary-steps span { border: 1px solid var(--border); padding: 26px; font-family: var(--font-display); font-size: 34px; font-weight: 900; text-align: center; }
+.summary-steps .active { background: var(--orange); color: var(--ink); }
+.summary-copy { display: grid; grid-template-columns: repeat(2, 1fr); grid-template-rows: 170px 220px; gap: 24px; }
+.summary-copy .copy-card:nth-child(3) { grid-column: 1 / 3; }
+.summary-copy .copy-card:nth-child(3) p { max-width: 1180px; }
+.next-band { position: absolute; left: 92px; right: 92px; bottom: 78px; color: var(--orange); }
+.end-slide .statement h1 { font-size: 130px; }
+.end-slide .statement p { font-size: 62px; max-width: 1180px; }
+
+/* === CONTROLS AND EDITING === */
+.deck-controls { display: flex; align-items: center; gap: 8px; font-family: var(--font-chrome); color: var(--cream); }
+.deck-controls button { width: 10px; height: 10px; border: 1px solid var(--orange); border-radius: 50%; background: transparent; cursor: pointer; }
+.deck-controls button.active { background: var(--orange); }
+.counter { position: fixed; right: 24px; bottom: 18px; z-index: 1000; color: var(--muted); font-family: var(--font-chrome); font-size: 13px; }
+.edit-hotzone { position: fixed; left: 0; top: 0; width: 80px; height: 80px; z-index: 10000; }
+.edit-toggle { position: fixed; left: 18px; top: 18px; z-index: 10001; opacity: 0; pointer-events: none; transition: opacity .25s ease; border: 1px solid var(--orange); background: var(--ink); color: var(--orange); padding: 9px 12px; font-family: var(--font-chrome); }
+.edit-toggle.show, .edit-toggle.active { opacity: 1; pointer-events: auto; }
+.editing [contenteditable="true"] { outline: 2px solid var(--orange); outline-offset: 3px; }
+
+</style>
+</head>
+<body>
+<div class="deck-viewport">
+  <main class="deck-stage" id="deckStage">
+    <section class="slide dark no-chrome speaker-slide" data-page="1">
+    <div class="slide-pad">
+      <div class="chrome"><div class="section-nav"><span>开场与议程</span><em>AI BOSS LECTURE</em></div><div>01 / 42</div></div>
+      
+    <div class="catalog">01</div>
+    <header class="title-block">
+    <h1 class="fit-title">主讲人：我的两个身份</h1>
+  </header>
+    <div class="speaker-grid-v3">
+      <aside class="speaker-profile">
+        <img src="images/01-zhaoyan.jpeg" alt="纪兆延照片">
+        <h2>纪兆延</h2>
+        <div class="speaker-tags"><span>北大AI本科 | Columbia MBA</span><span>5年国际管理咨询顾问（BCG）</span><span>AI产品/增长/转型操盘手（全网粉丝5万+）</span></div>
+      </aside>
+      <div class="identity-stack">
+        <article class="identity-card">
+          <div class="role-icon">&lt;/&gt;</div>
+          <h3>身份一：AI原住民</h3>
+          <p class="line ">北大人工智能本科</p><p class="line ">搭建AI自动化出海引擎（谷歌/ Youtube/ TK/ 海外媒体）</p><p class="line ">搭建AI投资系统/个人第二大脑/工程师团队</p><p class="line ">AI社媒账号粉丝5万+</p>
+        </article>
+        <article class="identity-card">
+          <div class="role-icon">楼</div>
+          <h3>身份二：管理咨询顾问</h3>
+          <p class="line ">国际顶尖咨询公司BCG 5年（跨国企业/主权基金/服装民企/家族产业）</p><p class="line ">国际领先企业AI前向部署（Forward Deploy）</p><p class="line ">本土企业AI转型顾问</p>
+        </article>
+      </div>
+    </div>
+  
+    </div>
+  </section>
+<section class="slide dark" data-page="2">
+    <div class="slide-pad">
+      <div class="chrome"><div class="section-nav"><span>开场与议程</span><em>OUTCOME</em></div><div>02 / 42</div></div>
+      
+    <header class="title-block">
+    <h1 class="fit-title">从&quot;听说 AI 很厉害&quot;，到&quot;知道自己公司该怎么搞AI&quot;</h1>
+  </header>
+    <div class="staircase"><article class="step-card active">
+      <div class="step-num">01</div>
+      <h3>开眼界</h3>
+      <p class="">分享最牛逼的人和公司怎么用AI：有的人在和AI聊天，有的人在用AI变革公司的生产系统</p>
+    </article><article class="step-card ">
+      <div class="step-num">02</div>
+      <h3>建判断</h3>
+      <p class="">看趋势和数字：AI 为什么不是短期噱头，而是重新颠覆世界规则的又一次工业革命</p>
+    </article><article class="step-card ">
+      <div class="step-num">03</div>
+      <h3>能开始</h3>
+      <p class="">讲老板必须懂的 AI 的术和道，现场就让你搭出自己的第一个AI产品原型</p>
+    </article></div>
+  
+    </div>
+  </section>
+<section class="slide dark" data-page="3">
+    <div class="slide-pad">
+      <div class="chrome"><div class="section-nav"><span>开场与议程</span><em>AGENDA</em></div><div>03 / 42</div></div>
+      
+    <header class="title-block">
+    <h1 class="fit-title">一天议程</h1>
+  </header>
+    <div class="agenda"><div class="agenda-row current">
+      <div class="agenda-num">01</div>
+      <div class="agenda-text"><strong>AI生产力革命：</strong> AI 聊天工具→AI员工→AI业务系统</div>
+    </div><div class="agenda-row ">
+      <div class="agenda-num">02</div>
+      <div class="agenda-text"><strong>AI全球趋势</strong>　为什么 AI是比工业革命更大的机会</div>
+    </div><div class="agenda-row ">
+      <div class="agenda-num">03</div>
+      <div class="agenda-text"><strong>AI的术</strong>　当老板在聊AI的时候，都该聊些什么</div>
+    </div><div class="agenda-row ">
+      <div class="agenda-num">04</div>
+      <div class="agenda-text"><strong>AI的道</strong>　公司到底该怎么做AI 转型</div>
+    </div><div class="agenda-row ">
+      <div class="agenda-num">05</div>
+      <div class="agenda-text"><strong>现场实战</strong>　从真实业务痛点，做自己的第一个 AI 产品雏形</div>
+    </div><div class="agenda-row ">
+      <div class="agenda-num">06</div>
+      <div class="agenda-text"><strong>彩蛋闲聊</strong>　AI投资、认知系统、个人第二大脑</div>
+    </div></div>
+  
+    </div>
+  </section>
+<section class="slide split-question no-chrome" data-page="4">
+    <div class="slide-pad">
+      
+      
+    <div class="split-left">
+      <div class="catalog">04</div>
+      <p>在座的各位今天都在怎么用AI？</p>
+    </div>
+    <div class="split-right">
+      <p>看看硅谷的AI弄潮儿、全球顶尖企业、中国领先同行都在怎么用AI</p>
+    </div>
+  
+    </div>
+  </section>
+<section class="slide dark case-slide has-stat-strip" data-page="5">
+    <div class="slide-pad">
+      <div class="chrome"><div class="section-nav"><span>AI生产力革命</span><em>CASE 01</em></div><div>05 / 42</div></div>
+      
+    <div class="case-head">
+      <div class="brand"><img src="images/05-yc.svg" alt="YC logo"><span>YC</span></div><div class="mini-photo"><img src="images/05-garry-tan.jpg" alt="Garry Tan"></div>
+      <h1 class="fit-title">案例一：硅谷AI创业的幕后推手，给自己造了一支AI 软件开发军团</h1>
+    </div>
+    <div class="case-grid">
+      <div class="case-copy"><article class="copy-card">
+    <h3>公司背景</h3>
+    <p class=""><em>Y Combinator，硅谷最有影响力的创业加速器之一，投过 Airbnb、Stripe、Dropbox、Coinbase。CEO Garry Tan 想做一个内部 founder CRM，给合伙人看每家被投公司的融资状态、进展和跟进。</em></p>
+  </article><article class="copy-card">
+    <h3>过去这件事怎么做</h3>
+    <p class=""><em>要产品经理写需求、设计师画界面、工程师读老代码库、QA 测试、安全检查权限、最后还有发布和文档。一个小功能要整支团队跑很久。</em></p>
+  </article><article class="copy-card">
+    <h3>他把 AI 组织成了什么</h3>
+    <p class=""><em>把 Claude Code 组织成一支 AI 软件生产军团：CEO代理、产品经理、工程负责人、设计师、QA、安全审计、增长负责人，各自分工。他不写每一行代码，只在上面定目标、看结果、做验收、纠偏。</em></p>
+  </article></div>
+      <div class="case-visual"><figure class="generated-image-panel overlay-panel yc-org-visual">
+    <img src="images-v4/05-yc-org-imggen.png" alt="YC AI软件开发军团">
+    <div class="visual-overlay">
+    <span class="yc-ceo">人类 CEO</span>
+    <span class="yc-agent">AI 中枢 / CEO Agent</span>
+    <span class="yc-role r1">产品</span><span class="yc-role r2">工程</span><span class="yc-role r3">设计</span><span class="yc-role r4">增长</span><span class="yc-role r5">质量</span><span class="yc-role r6">安全</span>
+  </div>
+  </figure></div>
+    </div>
+    <div class="stat-row"><div class="stat-card hot">
+    <div class="stat-value">15+</div>
+    <div class="stat-label">AI 软件开发Agent</div>
+  </div><div class="stat-card ">
+    <div class="stat-value">60 万+</div>
+    <div class="stat-label">行代码（60 天产出）</div>
+  </div><div class="stat-card ">
+    <div class="stat-value">2,400</div>
+    <div class="stat-label">个开发项目</div>
+  </div></div>
+  
+    </div>
+  </section>
+<section class="slide dark case-slide has-stat-strip" data-page="6">
+    <div class="slide-pad">
+      <div class="chrome"><div class="section-nav"><span>AI生产力革命</span><em>CASE 02</em></div><div>06 / 42</div></div>
+      
+    <div class="case-head">
+      <div class="brand"><img src="images/06-walmart.svg" alt="Walmart logo"><span>Walmart</span></div>
+      <h1 class="fit-title">案例二：世界最大的零售巨头，用AI把全球趋势直接变成货架上的商品</h1>
+    </div>
+    <div class="case-grid">
+      <div class="case-copy"><article class="copy-card">
+    <h3>公司背景</h3>
+    <p class=""><em>Walmart，全球最大零售商之一。2025 财年收入约 6,810 亿美元，全球员工约 210 万人。卖服装、杂货、日用品，做线上电商和线下门店。</em></p>
+  </article><article class="copy-card">
+    <h3>这门生意的老问题</h3>
+    <p class=""><em>趋势来得太快，商品上得太慢。今天 TikTok 上一个颜色、一个版型、一个穿搭风格火了，传统链路从发现趋势到设计、采购、生产、上架要走半年，窗口已经过了。</em></p>
+  </article><article class="copy-card">
+    <h3>AI 怎么干的</h3>
+    <p class=""><em>Walmart 搭了一台 AI 趋势到商品机器：持续看社交趋势、网络数据、潮流人群信号和消费变化，把外部信号翻译成给商品团队的输入：哪些 SKU 值得试、什么颜色优先、什么价位、哪些地区门店先上、线上页面主打什么卖点。设计和采购拿着这套结论进商品会，快速决策、快速上新。</em></p>
+  </article></div>
+      <div class="case-visual"><div class="timeline-bars">
+    <div class="bar-line long"><span>6 个月</span></div>
+    <div class="bar-line short"><span>6 周</span></div>
+    <div class="delta">-18 周</div>
+  </div></div>
+    </div>
+    <div class="stat-row"><div class="stat-card hot">
+    <div class="stat-value">6 周</div>
+    <div class="stat-label">从趋势到商品的新周期（原 6 个月）</div>
+  </div><div class="stat-card ">
+    <div class="stat-value">-18 周</div>
+    <div class="stat-label">流程缩短</div>
+  </div></div>
+  
+    </div>
+  </section>
+<section class="slide dark case-slide has-stat-strip" data-page="7">
+    <div class="slide-pad">
+      <div class="chrome"><div class="section-nav"><span>AI生产力革命</span><em>CASE 03</em></div><div>07 / 42</div></div>
+      
+    <div class="case-head">
+      <div class="brand"><img src="images/07-jihong-favicon.png" alt="吉宏股份 logo"><span>吉宏股份</span></div>
+      <h1 class="fit-title">案例三：中国跨境老板用AI 出海，每天自动试货、试图、试人群</h1>
+    </div>
+    <div class="case-grid">
+      <div class="case-copy"><article class="copy-card">
+    <h3>公司背景</h3>
+    <p class=""><em>吉宏股份，中国跨境社交电商上市公司，业务覆盖多个海外市场，涉及选品、素材、广告投放、翻译、客服和供应链。</em></p>
+  </article><article class="copy-card">
+    <h3>跨境电商真正难的地方</h3>
+    <p class=""><em>不是把中文翻译成英文，而是面对一堆国家、一堆语言、一堆平台。每个国家用户、价格敏感度、图片偏好、广告文案、客服问题都不一样。过去只能靠运营一个国家一个国家试，一个商品一个商品测。</em></p>
+  </article><article class="copy-card">
+    <h3>AI 怎么干的</h3>
+    <p class=""><em>吉宏搭了一套 AI 跨境增长中枢：每天读用户行为数据，辅助选品、生成素材、写广告语、做本地化、承接客服，再把投放和客服数据回流到下一轮优化。系统发现东南亚某国对一个家居小商品点击突然上升，AI 先从商品池里挑相似货，生成三套卖法：省空间、便宜实用、适合送礼，再生成当地语言的标题、广告文案、短视频脚本和客服 FAQ。第二天根据实际数据反馈动态调整：客户一直问尺寸就突出尺寸，一直问物流就强化配送承诺。</em></p>
+  </article></div>
+      <div class="case-visual"><figure class="generated-image-panel"><img src="images-v4/07-world-loop-gen.png" alt="跨境AI出海增长循环"></figure></div>
+    </div>
+    <div class="stat-row"><div class="stat-card hot">
+    <div class="stat-value">200 万+</div>
+    <div class="stat-label">日处理用户行为数据</div>
+  </div><div class="stat-card ">
+    <div class="stat-value">+18%</div>
+    <div class="stat-label">客单价同比提升</div>
+  </div><div class="stat-card ">
+    <div class="stat-value">60%+</div>
+    <div class="stat-label">跨境电商在公司营收的占比</div>
+  </div></div>
+  
+    </div>
+  </section>
+<section class="slide dark growth-engine" data-page="8">
+    <div class="slide-pad">
+      <div class="chrome"><div class="section-nav"><span>AI生产力革命</span><em>CASE 04</em></div><div>08 / 42</div></div>
+      
+    <header class="title-block">
+    <h1 class="fit-title">案例四：AI驱动的自动化出海增长引擎系统</h1>
+  </header>
+    <div class="growth-table">
+      <div class="growth-header"><span></span><span>平台</span><span>AI引擎</span><span>结果</span></div>
+      <article>
+      <div class="growth-num">01</div>
+      <h3>搜索引擎</h3>
+      <div class="platforms"><span class="platform-chip text-only"><b>Google（过去最重要的SEO）</b></span><span class="platform-chip text-only"><b>ChatGPT（未来最重要的GEO）</b></span></div>
+      <p>每天自动拉数据分析关键词趋势 -&gt; 批量选题/写文章/搭建网站 -&gt; 自动督促平台索引 -&gt; 自动分析网页和文章数据表现，寻找下一篇选题</p>
+      <p class="result-cell">上线一周进Google关键词首页 | 浏览量 <strong>10x</strong></p>
+    </article><article>
+      <div class="growth-num">02</div>
+      <h3>社交媒体</h3>
+      <div class="platforms"><span class="platform-chip"><img src="images-v4/logos/youtube.svg" alt="Youtube logo"><b>Youtube</b></span><span class="platform-chip"><img src="images-v4/logos/tiktok.svg" alt="Tiktok logo"><b>Tiktok</b></span><span class="platform-chip"><img src="images-v4/logos/instagram.svg" alt="Instagram logo"><b>Instagram</b></span><span class="platform-chip"><img src="images-v4/logos/pinterest.svg" alt="Pinterest logo"><b>Pinterest</b></span></div>
+      <p>每天自动拉数据分析平台趋势 -&gt; 拆解网站素材选题 -&gt; 自动生成图片短视频 -&gt; 分析</p>
+      <p class="result-cell">自动日更 | 首周浏览量<strong>5000+</strong></p>
+    </article><article>
+      <div class="growth-num">03</div>
+      <h3>海外论坛</h3>
+      <div class="platforms"><span class="platform-chip"><img src="images-v4/logos/reddit.svg" alt="Reddit logo"><b>Reddit</b></span><span class="platform-chip"><img src="images-v4/logos/quora.svg" alt="Quora logo"><b>Quora</b></span><span class="platform-chip text-only"><b>目录站</b></span><span class="platform-chip text-only"><b>工具站</b></span></div>
+      <p>每天自动刷论坛 -&gt; 定位高潜页面/帖子 -&gt; 自动回复讨论/软件植入 -&gt; 记录追踪重点线索</p>
+      <p class="result-cell">首周覆盖网站<strong>200+</strong> | 高质量帖子<strong>10+</strong></p>
+    </article><article>
+      <div class="growth-num">04</div>
+      <h3>海外媒体人</h3>
+      <div class="platforms"><span class="platform-chip"><img src="images-v4/logos/medium.svg" alt="Medium logo"><b>Medium</b></span><span class="platform-chip text-only"><b>Qwoted</b></span><span class="platform-chip text-only"><b>Source of source</b></span><span class="platform-chip text-only"><b>杂志</b></span></div>
+      <p>每天自动刷记者问题 -&gt; 自动邮件联系投稿 -&gt; 写文章/回复记者问题 -&gt; 记录追踪约稿</p>
+      <p class="result-cell">首周建联<strong>50+</strong> | 约定特稿<strong>1篇</strong></p>
+    </article>
+    </div>
+  
+    </div>
+  </section>
+<section class="slide dark pyramid-slide" data-page="9">
+    <div class="slide-pad">
+      <div class="chrome"><div class="section-nav"><span>AI生产力革命</span><em>THREE LEVELS</em></div><div>09 / 42</div></div>
+      
+    <header class="title-block">
+    <h1 class="fit-title">AI早就不是聊天机器人了，而是在变革生产方式和生意引擎</h1>
+  </header>
+    <div class="pyramid">
+      <article class="pyramid-layer l1">
+        <h3>第一层：聊天机器人（Chatbot）</h3><p class="">你问，它答。帮你写邮件、查资料、改 PPT、做摘要。</p>
+      </article><article class="pyramid-layer l2">
+        <h3>第二层：执行者（Workflow / Skill）</h3><p class="">你给它一个任务，它能稳定跑完一整套流程。读单、生成、回复、归档、提醒，自己跑完。</p>
+      </article><article class="pyramid-layer l3">
+        <h3>第三层：生意操盘者（Agent / System）</h3><p class="">你给它目标，它自己看数据、拆任务、调工具、推动作、看结果、再优化。它不是一个工具，是一个数字员工，甚至是一个数字部门。</p>
+      </article>
+    </div>
+    <div class="bottom-quote"><strong>AI 先是帮你回答问题，然后替你执行流程，最后会变成你公司业务和整盘生意的操盘者。</strong></div>
+  
+    </div>
+  </section>
+<section class="slide dark case-slide has-stat-strip" data-page="10">
+    <div class="slide-pad">
+      <div class="chrome"><div class="section-nav"><span>AI生产力革命</span><em>CONTENT</em></div><div>10 / 42</div></div>
+      
+    <div class="case-head">
+      <div class="brand"><img src="images/12-ap.svg" alt="AP logo"><span>AP</span></div>
+      <h1 class="fit-title">内容创作：AI不再是写一篇稿，是变成内容工业化产线</h1>
+    </div>
+    <div class="case-grid">
+      <div class="case-copy"><article class="copy-card">
+    <h3>公司背景</h3>
+    <p class=""><em>AP（美联社），美国通讯社，给全球大量媒体提供新闻内容。</em></p>
+  </article><article class="copy-card">
+    <h3>老问题</h3>
+    <p class=""><em>每个季度面对大量上市公司财报。大公司值得记者深挖，但中小公司也需要基础报道。过去记者和编辑要把结构化财务数据改写成标准新闻短稿，覆盖量有限，占用大量人力。</em></p>
+  </article><article class="copy-card">
+    <h3>AI 怎么干的</h3>
+    <p class=""><em>AP 搭了一套 AI 财报短稿生产线。财报数据进来，AI 根据营收、利润、同比变化、预期差异生成标准财经短稿，编辑把关后发布。一家公司发布季报，系统拿到收入、净利润、每股收益、同比变化和分析师预期，AI 自动写出一篇短稿：本季度收入多少、利润多少、是否高于市场预期、股价盘后什么反应。编辑只需要快速检查事实和措辞，记者把时间转向采访、分析、深度报道。</em></p>
+  </article></div>
+      <div class="case-visual"><figure class="generated-image-panel"><img src="images-v4/12-content-pipeline-gen.png" alt="AP内容工业化产线"></figure></div>
+    </div>
+    <div class="stat-row"><div class="stat-card hot">
+    <div class="stat-value">3,000+ 篇</div>
+    <div class="stat-label">每季度自动生成的财报稿</div>
+  </div><div class="stat-card ">
+    <div class="stat-value">10x</div>
+    <div class="stat-label">相对此前产出的倍数</div>
+  </div><div class="stat-card ">
+    <div class="stat-value">~20%</div>
+    <div class="stat-label">释放出的相关报道时间</div>
+  </div></div>
+  
+    </div>
+  </section>
+<section class="slide dark image-collage" data-page="11">
+    <div class="slide-pad">
+      <div class="chrome"><div class="section-nav"><span>AI生产力革命</span><em>CONTENT SYSTEM</em></div><div>11 / 42</div></div>
+      
+    <header class="title-block">
+    <h1 class="fit-title">内容创作：AI不再是生成一段假视频，而是在重构内容的生产和分发系统（1/4）</h1>
+  </header>
+    <figure class="single-generated-image content-system-frame">
+      <img src="images-v4/content-system-1-imggen.png" alt="传统内容 vs AI 驱动内容">
+      <div class="content-overlay content-overlay-1">
+      <h2>AI 正在重构内容行业的生产方式、供给结构与消费关系</h2>
+      <div class="cs-table">
+        <div class="cs-head">维度</div><div class="cs-head">传统内容</div><div class="cs-head hot">AI 驱动内容</div>
+        <div class="dim">创作模式</div><div class="">一次性交付的成品</div><div class="">可迭代的创作过程，逐集 / 逐分支演进</div><div class="dim">生产节奏</div><div class="">长周期、集中上线</div><div class="">短周期、持续更新</div><div class="dim">反馈与决策</div><div class="">播后被动反馈，难融入生产</div><div class="">互动数据直接进入后续决策</div><div class="dim">用户/平台关系</div><div class="">观众 = 消费者</div><div class="">观众 = 参与者 / 共创者</div><div class="dim">创作者生态</div><div class="">PGC</div><div class="">PUGC，专业内容能力向更小单元释放</div>
+      </div>
+      <p class="cs-callout">AI 带来的不是单一环节效率提升，而是内容“创作—反馈—再创作”闭环的建立。</p>
+    </div>
+    </figure>
+  
+    </div>
+  </section>
+<section class="slide dark image-collage" data-page="12">
+    <div class="slide-pad">
+      <div class="chrome"><div class="section-nav"><span>AI生产力革命</span><em>CONTENT SYSTEM</em></div><div>12 / 42</div></div>
+      
+    <header class="title-block">
+    <h1 class="fit-title">内容创作：AI不再是生成一段假视频，而是在重构内容的生产和分发系统（2/4）</h1>
+  </header>
+    <figure class="single-generated-image content-system-frame">
+      <img src="images-v4/content-system-2-imggen.png" alt="从线性生产到循环系统">
+      <div class="content-overlay content-overlay-2">
+      <h2>从项目制生产线，到可持续内容系统</h2>
+      <p class="cs-sub">过去，短剧是一条项目制生产线；未来，短剧将成为可持续迭代的内容系统</p>
+      <div class="cs2-board">
+        <section class="cs2-panel cs2-left">
+          <h3>传统短剧生产</h3>
+          <em>线性流程</em>
+          <div class="cs2-flow">
+            <span>一个剧本</span><b>→</b><span>一次拍摄</span><b>→</b><span>一次上线</span><b>→</b><span>一次消费</span>
+          </div>
+          <p>一次上线，一次消耗</p>
+        </section>
+        <section class="cs2-panel cs2-right">
+          <h3>AI 时代短剧生产</h3>
+          <em>循环系统</em>
+          <div class="cs2-loop">
+            <strong>AI</strong>
+            <span class="n1">一个世界观 / 一组角色 / 一套资产</span><span class="n2">多轮迭代</span><span class="n3">持续生成</span><span class="n4">用户参与</span><span class="n5">商业反馈 / 反哺创作</span>
+          </div>
+          <p>真实需求 → 内容生成 → 反馈循环</p>
+        </section>
+      </div>
+    </div>
+    </figure>
+  
+    </div>
+  </section>
+<section class="slide dark image-collage" data-page="13">
+    <div class="slide-pad">
+      <div class="chrome"><div class="section-nav"><span>AI生产力革命</span><em>CONTENT SYSTEM</em></div><div>13 / 42</div></div>
+      
+    <header class="title-block">
+    <h1 class="fit-title">内容创作：AI不再是生成一段假视频，而是在重构内容的生产和分发系统（3/4）</h1>
+  </header>
+    <figure class="single-generated-image content-system-frame">
+      <img src="images-v4/content-system-3-imggen.png" alt="不是压缩创作，而是释放创作者">
+      <div class="content-overlay content-overlay-3">
+      <h2>AI 提效的本质：不是压缩创作，而是释放创作者</h2>
+      <div class="cs-left-notes">
+        <p>AI 短剧并不等于几天批量洗稿</p>
+        <p>真正有市场表现的精品内容，仍然需要半个月左右剧本开发、一个月左右制作、调优、上线</p>
+        <p>AI 节省的是降低低效执行环节的时间与成本</p>
+        <p>被释放出来的是让创作者把更多精力回到“内容本身”</p>
+      </div>
+      <div class="cs-bars classic"><h3>传统模式：时间花在执行上</h3><div class="bar-row classic b1"><span>创意打磨</span><i style="--w:20"></i><b>20%</b></div><div class="bar-row classic b2"><span>剧本开发</span><i style="--w:20"></i><b>20%</b></div><div class="bar-row classic b3"><span>拍摄制作</span><i style="--w:30"></i><b>30%</b></div><div class="bar-row classic b4"><span>后期制作</span><i style="--w:20"></i><b>20%</b></div><div class="bar-row classic b5"><span>沟通返工</span><i style="--w:10"></i><b>10%</b></div></div>
+      <div class="cs-bars ai"><h3>AI 模式：时间花在创意上</h3><div class="bar-row ai b1"><span>创意打磨</span><i style="--w:40"></i><b>40%</b></div><div class="bar-row ai b2"><span>剧本开发</span><i style="--w:25"></i><b>25%</b></div><div class="bar-row ai b3"><span>AI 执行赋能</span><i style="--w:20"></i><b>20%</b></div><div class="bar-row ai b4"><span>后期优化</span><i style="--w:10"></i><b>10%</b></div><div class="bar-row ai b5"><span>市场验证迭代</span><i style="--w:5"></i><b>5%</b></div></div>
+      <p class="cs-callout">AI 不是让内容变得更草率，而是让创作者把时间重新花回“内容本身”</p>
+    </div>
+    </figure>
+  
+    </div>
+  </section>
+<section class="slide dark image-collage" data-page="14">
+    <div class="slide-pad">
+      <div class="chrome"><div class="section-nav"><span>AI生产力革命</span><em>CONTENT SYSTEM</em></div><div>14 / 42</div></div>
+      
+    <header class="title-block">
+    <h1 class="fit-title">内容创作：AI不再是生成一段假视频，而是在重构内容的生产和分发系统（4/4）</h1>
+  </header>
+    <figure class="single-generated-image content-system-frame">
+      <img src="images-v4/content-system-4-imggen.png" alt="短剧爆款案例">
+      <div class="content-overlay content-overlay-4">
+    <h2>案例一：AI 短剧已经具备商业化验证能力</h2>
+    <p class="cs-sub">爆款案例：首日 ROI 0.5，CPI 约 4 美金</p>
+    <div class="short-drama-original"><img src="images-v4/content-system-4-cover-crop.png" alt="AI短剧原始封面"></div>
+    <div class="poster-note">AI 内容</div>
+    <div class="cs-section s1"><b>01</b><h3>项目表现</h3><p>首日 <strong>ROI 0.5</strong></p><p>CPI 约 <strong>4 美金</strong></p><p>说明 AI 内容在付费投放环境下，已经具备可验证的商业效率</p></div>
+    <div class="cs-section s2"><b>02</b><h3>更重要的是</h3><p>这不是极限压缩成本下的粗制内容</p><p>项目仍然经历了：半个月剧本开发、一个月制作上线</p><p>说明“精品化 AI 内容”已经能够进入真实商业竞争</p></div>
+    <div class="cs-section s3"><b>03</b><h3>行业意义</h3><p>AI 短剧不再只是技术 Demo，而是开始成为可规模化投入、可评估 ROI 的内容商品</p></div>
+    <div class="cs-metrics"><span><b>0.5</b>首日 ROI</span><span><b>4 美金</b>CPI</span><span><b>半个月</b>剧本开发</span><span><b>一个月</b>制作上线</span></div>
+  </div>
+    </figure>
+  
+    </div>
+  </section>
+<section class="slide dark case-slide has-stat-strip" data-page="15">
+    <div class="slide-pad">
+      <div class="chrome"><div class="section-nav"><span>AI生产力革命</span><em>SUPPLY CHAIN</em></div><div>15 / 42</div></div>
+      
+    <div class="case-head">
+      <div class="brand"><img src="images/09-yuto-favicon.png" alt="裕同科技 logo"><span>裕同科技</span></div>
+      <h1 class="fit-title">供应链：AI不再是总结文件，是跑完整套订单系统</h1>
+    </div>
+    <div class="case-grid">
+      <div class="case-copy"><article class="copy-card">
+    <h3>公司背景</h3>
+    <p class=""><em>裕同科技，包装印刷制造企业。全球 48 个制造基地、近 100 个法人组织，2024 年营收约 170 亿元量级。</em></p>
+  </article><article class="copy-card">
+    <h3>老问题</h3>
+    <p class=""><em>每天大量客户 PO 单进来，有 PDF、Excel、邮件截图，里面是物料编码、币种、单价、数量、交期。人工录入又慢又烦，错一个数字，库存、生产、财务全部跟着错。</em></p>
+  </article><article class="copy-card">
+    <h3>AI 怎么干的</h3>
+    <p class=""><em>裕同搭了一套订单数字员工。客户发来一张 PO，AI 先读文件，把物料编码、数量、交期、价格抽出来，再和系统里的物料、价格、交期规则做比对。发现单价不一致、物料编码缺失、交期冲突，就打标给人处理；没问题的订单直接同步进 自己的业务系统。</em></p>
+  </article></div>
+      <div class="case-visual"><figure class="generated-image-panel"><img src="images-v4/09-po-flow-gen.png" alt="供应链PO自动化流程"></figure></div>
+    </div>
+    <div class="stat-row"><div class="stat-card hot">
+    <div class="stat-value">~20,000 小时</div>
+    <div class="stat-label">一年节约的人工成本</div>
+  </div></div>
+  
+    </div>
+  </section>
+<section class="slide dark case-slide has-stat-strip" data-page="16">
+    <div class="slide-pad">
+      <div class="chrome"><div class="section-nav"><span>AI生产力革命</span><em>RETAIL STORE</em></div><div>16 / 42</div></div>
+      
+    <div class="case-head">
+      <div class="brand"><img src="images/10-juewei-favicon.png" alt="绝味食品 logo"><span>绝味食品</span></div>
+      <h1 class="fit-title">零售门店：AI不再是写促销文案，是每家店的 AI 店长</h1>
+    </div>
+    <div class="case-grid">
+      <div class="case-copy"><article class="copy-card">
+    <h3>公司背景</h3>
+    <p class=""><em>绝味食品，中国卤味连锁上市公司。2024 年营收约 62.57 亿元，长期是万店连锁模型。</em></p>
+  </article><article class="copy-card">
+    <h3>万店连锁最难的地方</h3>
+    <p class=""><em>总部管不到每家店的细节。天气、客流、周边人群、会员复购状态每天都不同，统一发一张促销海报，解决不了所有门店的问题。</em></p>
+  </article><article class="copy-card">
+    <h3>AI 怎么干的</h3>
+    <p class=""><em>绝味做的是一套连锁门店 AI 经营班子：AI 点餐智体、AI 店长、AI 会员智体。比如某个城市下雨，几家门店客流下降，同时系统发现一批会员 30 天没复购。AI 会员智体先圈出这批人，按消费偏好生成不同权益；AI 店长给每家门店推今日动作：重点推哪个套餐、什么时候发券、店员怎么说；AI 点餐智体在前台根据用户选择继续推荐。</em></p>
+  </article></div>
+      <div class="case-visual"><figure class="generated-image-panel"><img src="images-v4/10-store-ai-gen.png" alt="门店AI班子"></figure></div>
+    </div>
+    <div class="stat-row"><div class="stat-card hot">
+    <div class="stat-value">1万+店</div>
+    <div class="stat-label">一套 AI 班子并发服务的门店量级</div>
+  </div></div>
+  
+    </div>
+  </section>
+<section class="slide dark case-slide has-stat-strip" data-page="17">
+    <div class="slide-pad">
+      <div class="chrome"><div class="section-nav"><span>AI生产力革命</span><em>CUSTOMER SERVICE</em></div><div>17 / 42</div></div>
+      
+    <div class="case-head">
+      <div class="brand"><img src="images/11-salient-favicon.png" alt="Salient logo"><span>Salient</span></div>
+      <h1 class="fit-title">客服: AI不再是自动回复，是真的打电话、接电话、跑流程的追单系统</h1>
+    </div>
+    <div class="case-grid">
+      <div class="case-copy"><article class="copy-card">
+    <h3>公司背景</h3>
+    <p class=""><em>Salient，美国金融服务 AI voice agent 公司，主要服务贷款、汽车金融、金融催收和客户服务这类高电话量场景。</em></p>
+  </article><article class="copy-card">
+    <h3>这门生意的老问题</h3>
+    <p class=""><em>电话量巨大，但每通电话又不能乱打。客服要知道客户账单、还款状态、合同规则，还要合规记录。遇到破产、律师介入、军人身份、严重财务困难，必须立刻转人工。</em></p>
+  </article><article class="copy-card">
+    <h3>AI 怎么干的</h3>
+    <p class=""><em>Salient 搭的是一套 AI 金融电话员工系统。AI voice agent 可以打电话、接电话、发短信、发邮件、记录系统、识别风险场景。一个汽车贷款客户逾期了，AI 先读账单、逾期天数和历史沟通记录，自动拨号。客户接通后，AI 解释账单、确认身份、询问还款安排。客户说&quot;下周五能付一半&quot;，AI 就生成还款计划，发短信确认，把承诺日期写回系统。客户一旦说&quot;律师已经联系我&quot;或&quot;我要申请破产&quot;，AI 立刻停止标准流程，把通话摘要、风险标签和建议动作转给人工专员。</em></p>
+  </article></div>
+      <div class="case-visual"><figure class="generated-image-panel"><img src="images-v4/11-salient-dialogue-gen.png" alt="AI客服追单流程"></figure></div>
+    </div>
+    <div class="stat-row"><div class="stat-card hot">
+    <div class="stat-value">百万+</div>
+    <div class="stat-label">触达消费者</div>
+  </div><div class="stat-card ">
+    <div class="stat-value">10 亿+ 美元</div>
+    <div class="stat-label">处理款项</div>
+  </div></div>
+  
+    </div>
+  </section>
+<section class="slide dark case-slide has-stat-strip" data-page="18">
+    <div class="slide-pad">
+      <div class="chrome"><div class="section-nav"><span>AI生产力革命</span><em>MANAGEMENT</em></div><div>18 / 42</div></div>
+      
+    <div class="case-head">
+      <div class="brand"><img src="images/13-qianan-favicon.png" alt="千岸科技 logo"><span>千岸科技</span></div>
+      <h1 class="fit-title">公司管理：AI不再是写周报，是替老板把分散的数据和问题收回一个管理驾驶舱</h1>
+    </div>
+    <div class="case-grid">
+      <div class="case-copy"><article class="copy-card">
+    <h3>公司背景</h3>
+    <p class=""><em>深圳千岸科技，跨境消费电子和自有品牌公司，核心品牌包括 Ohuhu、Tribit。2024 年营收约 16.67 亿元，团队超 400 人，产品卖到北美、欧洲、亚洲。</em></p>
+  </article><article class="copy-card">
+    <h3>跨境老板最痛的地方</h3>
+    <p class=""><em>数据散。销售、广告、红人、客服、Listing 都在不同系统里。老板问哪个国家赚钱、哪个广告亏钱、哪个客服问题影响转化，要几个人拉表，几天后才有答案。</em></p>
+  </article><article class="copy-card">
+    <h3>AI 怎么干的</h3>
+    <p class=""><em>千岸做的是一套跨境经营驾驶舱 + AI 客服系统，把多国家销售、广告归因、红人发货、客服绩效和产品知识库全部接起来。某个欧洲国家销量下降，过去广告、客服、运营三个团队分别拉表；现在系统同时看到广告花费、红人发货状态、客服问题、Listing 变化和产品评价。AI 发现差评集中在某个产品参数解释不清，于是更新客服知识库、生成新回复模板，同时提醒运营优化 Listing 页面。下一轮客服回复和转化数据再回流到系统里。</em></p>
+  </article></div>
+      <div class="case-visual"><figure class="generated-image-panel"><img src="images-v4/13-dashboard-gen.png" alt="老板经营驾驶舱"></figure></div>
+    </div>
+    <div class="stat-row"><div class="stat-card hot">
+    <div class="stat-value">秒级</div>
+    <div class="stat-label">跨系统数据同步速度</div>
+  </div><div class="stat-card ">
+    <div class="stat-value">+20%</div>
+    <div class="stat-label">邮件回复总量提升</div>
+  </div><div class="stat-card ">
+    <div class="stat-value">~20 小时</div>
+    <div class="stat-label">客服每人每月减少的无效耗时</div>
+  </div><div class="stat-card ">
+    <div class="stat-value">70%+</div>
+    <div class="stat-label">回复无修改采纳率</div>
+  </div></div>
+  
+    </div>
+  </section>
+<section class="slide dark table-slide" data-page="19">
+    <div class="slide-pad">
+      <div class="chrome"><div class="section-nav"><span>AI生产力革命</span><em>COMPARISON</em></div><div>19 / 42</div></div>
+      
+    <header class="title-block">
+    <h1 class="fit-title">同样都是用AI，不同人的用法天差地别</h1>
+  </header>
+    <table class="compare-table">
+    <thead><tr><th>职能</th><th>低阶（聊天机器人）</th><th>高阶（业务操盘者）</th></tr></thead>
+    <tbody><tr><td class="">内容生产</td><td class="">帮我写一篇稿</td><td class="hi">内容产线，可重复内容变工业化产能</td></tr><tr><td class="">内容引擎</td><td class="">帮我做一段视频</td><td class="hi">数字驱动、自动化的内容生产流水线，放大人类创意</td></tr><tr><td class="">供应链 / 订单</td><td class="">帮我解释一下这张订单</td><td class="hi">订单数字员工，读单、核单、同步系统全包</td></tr><tr><td class="">销售 / 出海</td><td class="">帮我翻译一段产品介绍</td><td class="hi">增长中枢，每天替你试货、试图、试人群</td></tr><tr><td class="">门店 / 零售</td><td class="">帮我写一条促销短信</td><td class="hi">AI 店长，按天气、客流、会员逐店派活</td></tr><tr><td class="">客服 / 售后</td><td class="">帮我答 FAQ</td><td class="hi">AI 电话员工，能打、能记、能识别风险</td></tr><tr><td class="">管理 / 经营</td><td class="">帮我总结一份周报</td><td class="hi">经营驾驶舱，分散数据问题动作收一屏</td></tr></tbody>
+  </table>
+    <div class="bottom-quote"><strong>我公司里第一个 AI 业务操盘者，应该放在哪个职能里？</strong></div>
+  
+    </div>
+  </section>
+<section class="slide dark trend-overview" data-page="20">
+    <div class="slide-pad">
+      <div class="chrome"><div class="section-nav"><span>AI全球趋势</span><em>GLOBAL TRENDS</em></div><div>20 / 42</div></div>
+      
+    <header class="title-block">
+    <h1 class="fit-title">6组数字带你看清全球范围内AI的核心趋势</h1>
+  </header>
+    <div class="trend-rows"><article class="active">
+      <div class="big-num">1</div><p>全球最顶尖的资源、人才、资本，全都在涌入AI</p>
+    </article><article class="">
+      <div class="big-num">2</div><p>各行各业的规则在被AI重写</p>
+    </article><article class="">
+      <div class="big-num">3</div><p>公司的成本结构和收入天花板在被 AI 重写</p>
+    </article><article class="">
+      <div class="big-num">4</div><p>人的生产力杠杆在被 AI 重写</p>
+    </article><article class="">
+      <div class="big-num">5</div><p>技术革命永远都是在加剧社会财富分化，AI更是如此</p>
+    </article><article class="">
+      <div class="big-num">6</div><p>真正的分化来源，不是有没有 AI，而是用AI用得多狠</p>
+    </article></div>
+    <div class="bottom-quote"><strong>别再跟人讨论AI有没有用了，多问问自己都会用AI做什么事情？车门焊死前先拿到入场券</strong></div>
+  
+    </div>
+  </section>
+<section class="slide dark info-three" data-page="21">
+    <div class="slide-pad">
+      <div class="chrome"><div class="section-nav"><span>AI全球趋势</span><em>GLOBAL TRENDS</em></div><div>21 / 42</div></div>
+      
+    <header class="title-block">
+    <h1 class="fit-title">最聪明的钱、最贵的人、最稀缺的资源，统统在涌入AI</h1>
+  </header>
+    <div class="info-columns"><article class="active">
+    <h3>收入不是涨，是爆</h3>
+    <div class="stat-line"><strong>4x+</strong></div><p class="">OpenAI ARR：60 亿（2024）→ 250 亿（2026）美元</p><div class="stat-line"><strong>300x+</strong></div><p class="">Anthropic ARR：8,700 万（2024 初）→ 300 亿（2026）美元</p>
+  </article><article class="">
+    <h3>基建不是买服务器，是建新铁路</h3>
+    <div class="stat-line"><strong>6.7 万亿美元</strong></div><p class="">全球数据中心投资需求到 2030 年（McKinsey 估算）</p><div class="stat-line"><strong>≈ 1.5 个日本</strong></div><p class="">日本 GDP 约 4.3–4.4 万亿美元</p>
+  </article><article class="">
+    <h3>人才不是招聘，是战略并购</h3>
+    <div class="stat-line"><strong>1 亿美元级</strong></div><p class="">Meta 给 OpenAI 顶级人才的薪资</p><div class="stat-line"><strong>~140 亿美元</strong></div><p class="">Meta 投资 Scale AI，把 Alexandr Wang 拉进超级智能团队</p>
+  </article></div>
+  
+    </div>
+  </section>
+<section class="slide dark info-three" data-page="22">
+    <div class="slide-pad">
+      <div class="chrome"><div class="section-nav"><span>AI全球趋势</span><em>INDUSTRY RULES</em></div><div>22 / 42</div></div>
+      
+    <header class="title-block">
+    <h1 class="fit-title">AI 在重写所有行业规则：人怎么干活、客户怎么找到你、客户怎么经营</h1>
+  </header>
+    <div class="info-columns"><article class="active">
+    <h3>生产关系被重写</h3>
+    <div class="stat-line"><strong>~49%</strong></div><p class="">的工作岗位&gt;25%工作被Claude干过</p><p class="">Claude 使用已从程序员（占比40%）扩散到媒体 10.3%、教育 9.3%、行政 7.9%、生命科学 6.4%、商业金融 5.9%</p>
+  </article><article class="">
+    <h3>流量入口被重写</h3>
+    <div class="stat-line"><strong>-25%</strong></div><p class="">传统搜索量到 2026 年的降幅</p><p class=""><em>过去：客户搜索 → 看排名 → 进网站 → 找销售。</em></p><p class=""><em>未来：客户问 AI → AI 直接筛选推荐 → 客户只接触被 AI 放进答案里的公司。</em></p>
+  </article><article class="">
+    <h3>客户经营被重写</h3>
+    <div class="stat-line"><strong>80% / -30%</strong></div><p class="">AI到2029年解决客服问题占比 / 运营成本降幅（Gartner 预测）</p><p class=""><em>不只是客服。线索筛选、销售跟进、报价答疑、售后支持、复购提醒、投诉处理，整条客户经营链都会被 AI 先接住。</em></p>
+  </article></div>
+  
+    </div>
+  </section>
+<section class="slide dark info-three with-logos" data-page="23">
+    <div class="slide-pad">
+      <div class="chrome"><div class="section-nav"><span>AI全球趋势</span><em>P&amp;L</em></div><div>23 / 42</div></div>
+      
+    <header class="title-block">
+    <h1 class="fit-title">传统公司用AI优化成本，AI-native公司用AI突破收入天花板</h1>
+  </header>
+    <div class="info-columns"><article class="active">
+      <div class="brand"><img src="images/18-klarna.svg" alt="Klarna logo"><span>Klarna</span></div>
+      <h3>成本端：AI 已经进利润表</h3>
+      <div class="stat-line"><strong>~4,000 万美元</strong></div><p class="">Klarna AI 客服带来的预计利润改善</p><div class="stat-line"><strong>~700</strong></div><p class="">减少的全职客服工作量</p><p class=""><em>Klarna AI 客服承担约三分之二的客服聊天量。</em></p>
+    </article><article class="">
+      <div class="brand"><img src="images/18-lovable-favicon.png" alt="Lovable logo"><span>Lovable</span></div>
+      <h3>收入端：AI-native 公司的人均收入密度离谱</h3>
+      <div class="stat-line"><strong>~270 万美元</strong></div><p class="">Lovable 人均 ARR</p><div class="stat-line"><strong>~10x</strong></div><p class="">传统 SaaS 常见水平的倍数</p><p class=""><em>Lovable 约 146 人做到约 4 亿美元 ARR。以前公司长收入要同步长团队，现在收入可以涨很快，人不一定跟着涨。</em></p>
+    </article><article class="">
+      <div class="brand"><img src="images/18-ramp-favicon.png" alt="Ramp logo"><span>Ramp</span></div>
+      <h3>增长端：最敢买 AI 的公司，收入也在拉开</h3>
+      <div class="stat-line"><strong>2x+</strong></div><p class="">AI开支最高四分位公司过去两年收入增长（Ramp）</p><p class=""><em>它们买的不是账号，是产能。</em></p>
+    </article></div>
+  
+    </div>
+  </section>
+<section class="slide dark info-three production-team" data-page="24">
+    <div class="slide-pad">
+      <div class="chrome"><div class="section-nav"><span>AI全球趋势</span><em>POWER USER</em></div><div>24 / 42</div></div>
+      
+    <header class="title-block">
+    <h1 class="fit-title">会用 AI 的人，已经从一个人变成了一支生产团队</h1>
+  </header>
+    <div class="info-columns"><article class="active">
+    <h3>Token 是新生产燃料</h3>
+    <div class="stat-line"><strong>$25万</strong></div><p class="">英伟达 CEO黄仁勋要求一个 50 万美元年薪工程师一年应该用的AI金额</p>
+  </article><article class="">
+    <h3>最激进的power user已经不是用 AI，而是在调度 AI</h3>
+    <div class="stat-line"><strong>$1.3M</strong></div><p class="">OpenClaw创始人 Peter Steinberger 单月烧掉的 OpenAI API</p><div class="stat-line"><strong>6,030 亿 / 760 万</strong></div><p class="">30 天消耗的 tokens / 发起的请求</p>
+  </article><article class="">
+    <h3>一人公司，已经从段子变成资本下注</h3>
+    <div class="stat-line"><strong>0 员工 / $250M 估值</strong></div><p class="">Polsia 公司形态</p><div class="stat-line"><strong>~$10M ARR</strong></div><p class="">Polsia 接近 1,000 万美元年收入</p><p class=""><em>Polsia 把研发、营销、融资都交给了 AI</em></p>
+  </article></div>
+    <div class="person-agents"><span>鍛樺伐</span><b>+</b><i>AI</i><i>AI</i><i>AI</i><i>AI</i><i>AI</i></div>
+  
+    </div>
+  </section>
+<section class="slide dark info-three divide-slide" data-page="25">
+    <div class="slide-pad">
+      <div class="chrome"><div class="section-nav"><span>AI全球趋势</span><em>DIVERGENCE</em></div><div>25 / 42</div></div>
+      
+    <header class="title-block">
+    <h1 class="fit-title">历次科技革命，财富都会向掌握新生产资料的人集中</h1>
+  </header>
+    <div class="info-columns"><article class="active">
+    <h3>历史规律</h3>
+    <div class="stat-line"><strong>52% → 63%</strong></div><p class="">欧洲 top 1% 财富份额（1810 → 1910，工业革命）</p><div class="stat-line"><strong>25-30% → 40%+</strong></div><p class="">美国 top 1% 财富份额（1980 → 今天，互联网时代）</p><div class="stat-line"><strong>？</strong></div><p class="">AI的聚集效应只会更强</p>
+  </article><article class="">
+    <h3>AI 核心圈正在极速造富</h3>
+    <div class="stat-line"><strong>50+</strong></div><p class="">2025 年 AI 制造的新亿万富翁数</p><div class="stat-line"><strong>600+</strong></div><p class="">OpenAI百万美金富翁员工数</p><div class="stat-line"><strong>~78%</strong></div><p class="">NVIDIA 员工净值达百万美元</p>
+  </article><article class="">
+    <h3>同一时间，另一边在被挤压</h3>
+    <div class="stat-line"><strong>10 万+ / 近 8 万</strong></div><p class="">科技行业 2025 全年裁员 / 2026 Q1 裁员</p><p class=""><em>一边是 1 亿美元挖人，一边是十几万人被裁，这就是 AI 分化最直观的样子。</em></p>
+  </article></div>
+  
+    </div>
+  </section>
+<section class="slide dark funnel-slide" data-page="26">
+    <div class="slide-pad">
+      <div class="chrome"><div class="section-nav"><span>AI全球趋势</span><em>FUNNEL</em></div><div>26 / 42</div></div>
+      
+    <header class="title-block">
+    <h1 class="fit-title">最危险的不是你没听过 AI，而是你以为自己已经用了 AI</h1>
+  </header>
+    <div class="funnel">
+      <div class="funnel-row r0">80 亿</div><div class="funnel-row r1">17-18 亿</div><div class="funnel-row r2">~2 亿</div><div class="funnel-row r3">~4 百万</div><div class="funnel-row r4">极限玩家</div>
+    </div>
+    <div class="funnel-copy"><article class="copy-card">
+    <h3>AI 使用是一条光谱，不是 0 和 1</h3>
+    <p class=""><em>没上车 → 免费浅用 → 付费使用 → 进入 coding agent / workflow / agent system → 把 AI 接进公司生产系统</em></p>
+  </article><article class="copy-card">
+    <h3>全球漏斗</h3>
+    
+  </article><article class="copy-card">
+    <h3>80 亿</h3>
+    <p class="">全球总人口</p>
+  </article><article class="copy-card">
+    <h3>17-18 亿</h3>
+    <p class="">AI 用户，占人口 20-25%</p>
+  </article><article class="copy-card">
+    <h3>~2 亿</h3>
+    <p class="">AI 付费用户，约人口2%</p>
+  </article><article class="copy-card">
+    <h3>~4 百万</h3>
+    <p class="">AI agent用户，人口0.05%</p>
+  </article><article class="copy-card">
+    <h3>最顶层是极限玩家</h3>
+    <p class="">小龙虾他爹一个月烧 130 万美元 API</p><p class="">Polsia零员工估值 2.5 亿美元</p>
+  </article><article class="copy-card">
+    <h3>你还在和 AI 聊天，别人已经在用 AI 管流程、管团队、管体系。</h3>
+    
+  </article></div>
+  
+    </div>
+  </section>
+<section class="slide orange declaration question-slide" data-page="27">
+    <div class="slide-pad">
+      
+      
+    <div class="catalog">27</div>
+    <h1 class="fit-title">你今天还要做一个怀疑AI价值的人么？</h1>
+    <div class="two-question"><article class="copy-card">
+    <h3>老板今天真正要问的不是</h3>
+    <p class="">AI 有没有用？</p>
+  </article><article class="copy-card">
+    <h3>老板今天真正要问的是</h3>
+    <p class="">我的公司，会站在 AI 分化的哪一边？</p>
+  </article></div>
+    <div class="dao-shu"><article class="copy-card">
+    <h3>要站在赢的一边，接下来要解决两件事</h3>
+    <p class=""><strong>AI 的术</strong>：一套真正能进生意的AI系统由什么组成</p><p class=""><strong>AI 的道</strong>：老板怎么带公司进行AI转型</p>
+  </article></div>
+  
+    </div>
+  </section>
+<section class="slide dark architecture-slide" data-page="28">
+    <div class="slide-pad">
+      <div class="chrome"><div class="section-nav"><span>AI的术</span><em>SYSTEM STACK</em></div><div>28 / 42</div></div>
+      
+    <header class="title-block">
+    <h1 class="fit-title">AI 的术：你必须要了解的 AI 六大系统性问题</h1>
+  </header>
+    <div class="layers">
+      <div class="layer layer-0"><span>6</span><strong>目标与制度</strong><em>懂得都懂</em><small>老板自己</small></div><div class="layer layer-1"><span>5</span><strong>编排层</strong><em>AI的SOP/方法论/生意经</em><small>Openclaw、Claude Code、扣子 Coze</small></div><div class="layer layer-2"><span>4</span><strong>工具与感知层</strong><em>AI 的五官和手脚</em><small>MCP, Skill, API</small></div><div class="layer layer-3"><span>3</span><strong>记忆层</strong><em>公司的档案室/数据库</em><small>Salesforce、SAP、Snowflake</small></div><div class="layer layer-4"><span>2</span><strong>模型层</strong><em>AI的大脑</em><small>Claude、ChatGPT、Deepseek、Seed</small></div><div class="layer layer-5"><span>1</span><strong>基础设施层</strong><em>AI体能和能量供给</em><small>英伟达、谷歌、微软、阿里云</small></div>
+    </div>
+    <div class="bottom-quote"></div>
+  
+    </div>
+  </section>
+<section class="slide dark system-slide" data-page="29">
+    <div class="slide-pad">
+      <div class="chrome"><div class="section-nav"><span>AI的术</span><em>SIX QUESTIONS</em></div><div>29 / 42</div></div>
+      
+    <header class="title-block">
+    <h1 class="fit-title">第一层基础设施：先把 AI 用起来，比先把服务器买回来重要</h1>
+  </header>
+    <div class="system-grid">
+      <article class="term-list">
+        <h3>AI跑在哪里？</h3>
+        <div class="section-label">鍏抽敭鍚嶈瘝</div>
+        <p class="line "><strong>GPU</strong>：AI 最核心的计算设备</p><p class="line "><strong>云</strong>：不自己买机器，租 AWS、Azure、Google Cloud、阿里云、火山引擎、腾讯云</p><p class="line "><strong>数据中心</strong>：算力集中放置和运行的地方</p><p class="line "><strong>本地部署</strong>：把 AI 放在公司自己的私有环境</p><p class="line "><strong>推理成本</strong>：AI 每次回答、分析、生成、执行任务背后的计算成本</p><p class="line ">第一个问题不该是&quot;我要不要自己买 GPU&quot;，而是&quot;我是不是先用成熟的云&quot;</p><p class="line ">只有数据特别敏感、规模特别大、监管特别严的时候，才认真考虑私有化</p>
+      </article>
+      <article class="judgement">
+        <div class="section-label">鍏抽敭鍒ゆ柇</div>
+        <h3><strong>关键名词</strong></h3>
+        <p class="line "><strong>GPU</strong>：AI 最核心的计算设备</p><p class="line "><strong>云</strong>：不自己买机器，租 AWS、Azure、Google Cloud、阿里云、火山引擎、腾讯云</p><p class="line "><strong>数据中心</strong>：算力集中放置和运行的地方</p><p class="line "><strong>本地部署</strong>：把 AI 放在公司自己的私有环境</p><p class="line "><strong>推理成本</strong>：AI 每次回答、分析、生成、执行任务背后的计算成本</p><p class="line ">第一个问题不该是&quot;我要不要自己买 GPU&quot;，而是&quot;我是不是先用成熟的云&quot;</p><p class="line ">只有数据特别敏感、规模特别大、监管特别严的时候，才认真考虑私有化</p><p class="line ">日常更现实的问题：成本能不能接受？速度够不够快？服务稳不稳定？数据放哪里合规？</p>
+      </article>
+    </div>
+  
+    </div>
+  </section>
+<section class="slide dark system-slide" data-page="30">
+    <div class="slide-pad">
+      <div class="chrome"><div class="section-nav"><span>AI的术</span><em>SIX QUESTIONS</em></div><div>30 / 42</div></div>
+      
+    <header class="title-block">
+    <h1 class="fit-title">第二层模型：选模型像招人，不是找最贵的，而是找最适合这个岗位的</h1>
+  </header>
+    <div class="system-grid">
+      <article class="term-list">
+        <h3>AI用哪个大脑？</h3>
+        <div class="section-label">鍏抽敭鍚嶈瘝</div>
+        <p class="line "><strong>大模型</strong>：AI 的大脑，GPT / Claude / Gemini / DeepSeek / 通义 / Kimi / 豆包，每个像不同类型的人</p><p class="line "><strong>Token</strong>：AI 的油耗，读越多材料、跑越复杂任务，烧得越多</p><p class="line "><strong>上下文窗口</strong>：AI 一次能临时记住多少东西，塞越多不等于理解越好</p><p class="line "><strong>多模态</strong>：能不能看图、听声、读视频、读表格</p><p class="line "><strong>推理模型</strong>：擅长分步骤思考、解决复杂问题</p><p class="line ">写营销文案看创意；读合同看长文本；做客服看稳定性；写代码看工程能力；做经营分析看推理</p><p class="line ">模型只是大脑，公司真正的差异，不在用了哪个模型，而在这个模型有没有被接进业务、数据和流程</p>
+      </article>
+      <article class="judgement">
+        <div class="section-label">鍏抽敭鍒ゆ柇</div>
+        <h3><strong>关键名词</strong></h3>
+        <p class="line "><strong>大模型</strong>：AI 的大脑，GPT / Claude / Gemini / DeepSeek / 通义 / Kimi / 豆包，每个像不同类型的人</p><p class="line "><strong>Token</strong>：AI 的油耗，读越多材料、跑越复杂任务，烧得越多</p><p class="line "><strong>上下文窗口</strong>：AI 一次能临时记住多少东西，塞越多不等于理解越好</p><p class="line "><strong>多模态</strong>：能不能看图、听声、读视频、读表格</p><p class="line "><strong>推理模型</strong>：擅长分步骤思考、解决复杂问题</p><p class="line ">写营销文案看创意；读合同看长文本；做客服看稳定性；写代码看工程能力；做经营分析看推理</p><p class="line ">模型只是大脑，公司真正的差异，不在用了哪个模型，而在这个模型有没有被接进业务、数据和流程</p><p class="line ">模型每天都在变强，今天选的明天可能不是最优，别梭哈一个模型</p>
+      </article>
+    </div>
+  
+    </div>
+  </section>
+<section class="slide dark system-slide" data-page="31">
+    <div class="slide-pad">
+      <div class="chrome"><div class="section-nav"><span>AI的术</span><em>SIX QUESTIONS</em></div><div>31 / 42</div></div>
+      
+    <header class="title-block">
+    <h1 class="fit-title">第三层记忆：模型决定 AI 聪不聪明，记忆决定 AI 懂不懂你的公司</h1>
+  </header>
+    <div class="system-grid">
+      <article class="term-list">
+        <h3>AI读了哪些公司记忆？</h3>
+        <div class="section-label">鍏抽敭鍚嶈瘝</div>
+        <p class="line "><strong>RAG</strong>：让 AI 先查公司资料，再回答问题</p><p class="line "><strong>知识库</strong>：公司文档、制度、产品资料、客户 FAQ、合同模板、培训手册</p><p class="line "><strong>向量数据库</strong>：让 AI 更好地检索和理解公司资料的底层技术</p><p class="line "><strong>CRM</strong>：客户、线索、销售跟进的数据库</p><p class="line "><strong>ERP</strong>：订单、库存、采购、财务、生产的数据库</p><p class="line ">它能告诉你什么叫合同风险，但不知道你公司哪个客户快流失、哪个订单要逾期</p><p class="line ">老板要问：读了哪些资料？是不是最新？口径是不是统一？谁有权限？能不能追溯来源？</p>
+      </article>
+      <article class="judgement">
+        <div class="section-label">鍏抽敭鍒ゆ柇</div>
+        <h3><strong>关键名词</strong></h3>
+        <p class="line "><strong>RAG</strong>：让 AI 先查公司资料，再回答问题</p><p class="line "><strong>知识库</strong>：公司文档、制度、产品资料、客户 FAQ、合同模板、培训手册</p><p class="line "><strong>向量数据库</strong>：让 AI 更好地检索和理解公司资料的底层技术</p><p class="line "><strong>CRM</strong>：客户、线索、销售跟进的数据库</p><p class="line "><strong>ERP</strong>：订单、库存、采购、财务、生产的数据库</p><p class="line ">它能告诉你什么叫合同风险，但不知道你公司哪个客户快流失、哪个订单要逾期</p><p class="line ">老板要问：读了哪些资料？是不是最新？口径是不是统一？谁有权限？能不能追溯来源？</p><p class="line ">很多 AI 项目失败，不是模型不够强，是公司自己的资料乱、口径乱、权限乱</p>
+      </article>
+    </div>
+  
+    </div>
+  </section>
+<section class="slide dark system-slide" data-page="32">
+    <div class="slide-pad">
+      <div class="chrome"><div class="section-nav"><span>AI的术</span><em>SIX QUESTIONS</em></div><div>32 / 42</div></div>
+      
+    <header class="title-block">
+    <h1 class="fit-title">第四层工具与感知：AI 只有接上五官和手脚，才会从顾问变成员工</h1>
+  </header>
+    <div class="system-grid">
+      <article class="term-list">
+        <h3>AI能看见什么、操作什么？</h3>
+        <div class="section-label">鍏抽敭鍚嶈瘝</div>
+        <p class="line "><strong>API</strong>：让 AI 接进 CRM、订单系统、邮箱、工单系统的标准插头</p><p class="line "><strong>MCP</strong>：新一代标准插座，让 AI 更标准地连接外部工具和系统</p><p class="line "><strong>RPA</strong>：老系统没接口时，让机器人模拟人点鼠标、填表格</p><p class="line "><strong>Tool Calling</strong>：AI 根据任务自己调用外部工具</p><p class="line "><strong>OCR</strong>：让 AI 读发票、合同、订单、PDF、截图里的字</p><p class="line "><strong>语音识别</strong>：让 AI 听电话、会议、客服录音</p><p class="line ">一个客服 AI 只会答 FAQ 是聊天机器人；能查订单、查物流、建工单、回写 CRM，才是员工</p><p class="line ">老板要问：AI 能不能读真实业务里的材料？能不能连我的系统？能不能把结果写回系统？</p>
+      </article>
+      <article class="judgement">
+        <div class="section-label">鍏抽敭鍒ゆ柇</div>
+        <h3><strong>关键名词</strong></h3>
+        <p class="line "><strong>API</strong>：让 AI 接进 CRM、订单系统、邮箱、工单系统的标准插头</p><p class="line "><strong>MCP</strong>：新一代标准插座，让 AI 更标准地连接外部工具和系统</p><p class="line "><strong>RPA</strong>：老系统没接口时，让机器人模拟人点鼠标、填表格</p><p class="line "><strong>Tool Calling</strong>：AI 根据任务自己调用外部工具</p><p class="line "><strong>OCR</strong>：让 AI 读发票、合同、订单、PDF、截图里的字</p><p class="line "><strong>语音识别</strong>：让 AI 听电话、会议、客服录音</p><p class="line ">一个客服 AI 只会答 FAQ 是聊天机器人；能查订单、查物流、建工单、回写 CRM，才是员工</p><p class="line ">老板要问：AI 能不能读真实业务里的材料？能不能连我的系统？能不能把结果写回系统？</p><p class="line ">老系统没有接口也不用怕，用过渡方案，先把 AI 用起来</p>
+      </article>
+    </div>
+  
+    </div>
+  </section>
+<section class="slide dark system-slide" data-page="33">
+    <div class="slide-pad">
+      <div class="chrome"><div class="section-nav"><span>AI的术</span><em>SIX QUESTIONS</em></div><div>33 / 42</div></div>
+      
+    <header class="title-block">
+    <h1 class="fit-title">第五层编排：AI 最值钱的地方，是它能复制你公司最会做事的那套方法</h1>
+  </header>
+    <div class="system-grid">
+      <article class="term-list">
+        <h3>AI按什么 SOP 做事？</h3>
+        <div class="section-label">鍏抽敭鍚嶈瘝</div>
+        <p class="line "><strong>Workflow</strong>：固定路线（收件 → 识别意图 → 查订单 → 生成回复 → 人审 → 发送 → 记 CRM）</p><p class="line "><strong>Agent</strong>：更像 AI 员工，目标明确就能自己拆任务、调工具、看结果</p><p class="line "><strong>Multi-agent</strong>：多个 AI 角色协作（销售 + 检索 + 报价 + 审核）</p><p class="line "><strong>SOP</strong>：公司原本的标准动作流程</p><p class="line "><strong>Human-in-the-loop</strong>：人在关键节点参与审核、判断、负责</p><p class="line ">一个优秀销售为什么转化率高？怎么判断客户、什么时候跟进、怎么报价、怎么处理异议——能拆出来，就能放大</p><p class="line ">高频、重复、规则清楚的事，先做 workflow；目标清晰、路径不固定的，再上 agent</p>
+      </article>
+      <article class="judgement">
+        <div class="section-label">鍏抽敭鍒ゆ柇</div>
+        <h3><strong>关键名词</strong></h3>
+        <p class="line "><strong>Workflow</strong>：固定路线（收件 → 识别意图 → 查订单 → 生成回复 → 人审 → 发送 → 记 CRM）</p><p class="line "><strong>Agent</strong>：更像 AI 员工，目标明确就能自己拆任务、调工具、看结果</p><p class="line "><strong>Multi-agent</strong>：多个 AI 角色协作（销售 + 检索 + 报价 + 审核）</p><p class="line "><strong>SOP</strong>：公司原本的标准动作流程</p><p class="line "><strong>Human-in-the-loop</strong>：人在关键节点参与审核、判断、负责</p><p class="line ">一个优秀销售为什么转化率高？怎么判断客户、什么时候跟进、怎么报价、怎么处理异议——能拆出来，就能放大</p><p class="line ">高频、重复、规则清楚的事，先做 workflow；目标清晰、路径不固定的，再上 agent</p><p class="line ">别一上来追求全自动，第一步可以是 AI 做 70%、人审 30%，跑通再提自动化比例</p>
+      </article>
+    </div>
+  
+    </div>
+  </section>
+<section class="slide dark system-slide" data-page="34">
+    <div class="slide-pad">
+      <div class="chrome"><div class="section-nav"><span>AI的术</span><em>SIX QUESTIONS</em></div><div>34 / 42</div></div>
+      
+    <header class="title-block">
+    <h1 class="fit-title">第六层目标与制度：目标决定 AI 往哪跑，制度决定 AI 不能乱跑</h1>
+  </header>
+    <div class="system-grid">
+      <article class="term-list">
+        <h3>AI的目标和制度是什么？</h3>
+        <div class="section-label">鍏抽敭鍚嶈瘝</div>
+        <p class="line "><strong>权限</strong>：AI 能看什么、能改什么、能发什么</p><p class="line "><strong>评测集</strong>：AI 做得对不对、稳不稳、有没有风险</p><p class="line "><strong>日志</strong>：出问题能追溯，AI 看了什么、调了什么、谁审核了</p><p class="line "><strong>Harness</strong>：AI 团队的整套管理制度</p><p class="line ">没有目标，AI 就变成玩具，好玩，但进不了经营指标</p><p class="line ">AI 越接近钱、客户、合同、法律，越不能裸奔，必须有权限、审批、日志、人类复核</p>
+      </article>
+      <article class="judgement">
+        <div class="section-label">鍏抽敭鍒ゆ柇</div>
+        <h3><strong>关键名词</strong></h3>
+        <p class="line "><strong>权限</strong>：AI 能看什么、能改什么、能发什么</p><p class="line "><strong>评测集</strong>：AI 做得对不对、稳不稳、有没有风险</p><p class="line "><strong>日志</strong>：出问题能追溯，AI 看了什么、调了什么、谁审核了</p><p class="line "><strong>Harness</strong>：AI 团队的整套管理制度</p><p class="line ">没有目标，AI 就变成玩具，好玩，但进不了经营指标</p><p class="line ">AI 越接近钱、客户、合同、法律，越不能裸奔，必须有权限、审批、日志、人类复核</p><p class="line ">老板要问：KPI 是什么？哪些事 AI 做、哪些必须人批？错误怎么发现？成本怎么控？出错能追溯吗？</p>
+      </article>
+    </div>
+  
+    </div>
+  </section>
+<section class="slide dark review-form" data-page="35">
+    <div class="slide-pad">
+      <div class="chrome"><div class="section-nav"><span>AI的术</span><em>REVIEW</em></div><div>35 / 42</div></div>
+      
+    <header class="title-block">
+    <h1 class="fit-title">以后听任何 AI 方案，老板就问这六个问题</h1>
+  </header>
+    <div class="question-grid"><div class="active"><span>01</span><strong>它跑在哪里？</strong></div><div class=""><span>02</span><strong>它用哪个大脑？</strong></div><div class=""><span>03</span><strong>它读了哪些公司记忆？</strong></div><div class=""><span>04</span><strong>它能看见什么、操作什么？</strong></div><div class=""><span>05</span><strong>它按什么 SOP 做事？</strong></div><div class=""><span>06</span><strong>它的目标和制度是什么？</strong></div></div>
+    <div class="warning"><em>如果一个方案只说用了最强模型，却说不清后面几个问题，它大概率还只是工具，不是一套业务系统</em></div>
+  
+    </div>
+  </section>
+<section class="slide orange declaration four-steps" data-page="36">
+    <div class="slide-pad">
+      
+      
+    <div class="catalog">36</div>
+    <h1 class="fit-title">AI的道：AI 转型四步法</h1>
+    <div class="steps-vertical"><article>
+      <div>01</div><h3>第一步：老板下场</h3><p class=""><em>没有老板的决心和判断力，AI 很容易变成 IT 部门的工具试用，或者员工自己的零散尝试。</em></p>
+    </article><article>
+      <div>02</div><h3>第二步：打一场速赢</h3><p class=""><em>不要一上来搞大而全。先找一个高频、重复、真实痛的业务场景打穿。</em></p>
+    </article><article>
+      <div>03</div><h3>第三步：让AI特种兵(Forward Deploy)做前线共创</h3><p class=""><em>传统企业内部很难自然长出 AI 能力。需要懂 AI、懂产品、懂业务流程的人，把技术能力和企业流程接起来。</em></p>
+    </article><article>
+      <div>04</div><h3>第四步：把能力内化</h3><p class=""><em>外部团队可以帮公司打第一仗，但最后公司自己要会用、会扩、会沉淀，真正变成 AI 原生组织。</em></p>
+    </article></div>
+  
+    </div>
+  </section>
+<section class="slide dark method-slide " data-page="37">
+    <div class="slide-pad">
+      <div class="chrome"><div class="section-nav"><span>AI的道</span><em>TRANSFORMATION</em></div><div>37 / 42</div></div>
+      
+    <header class="title-block">
+    <h1 class="fit-title">第一步：老板下场，AI 是一把手工程，不是 IT 项目</h1>
+  </header>
+    <div class="method-grid">
+      <div class="method-copy"><article class="copy-card">
+    <h3>三个原则</h3>
+    <p class=""><em>AI是一把手工程：改变的是公司怎么生产、怎么销售、怎么服务客户、怎么管理人。它不是 IT 项目，也不是创新部门项目。</em></p><p class=""><em>老板必须成为深度使用者：自己不用 AI，就不知道什么是好、什么是差、什么是演示、什么是真能力。</em></p><p class=""><em>老板要亲自定义目标和制度，AI 要帮公司完成什么目标、哪些事能交、哪些事必须人兜底、最后谁对结果负责。</em></p>
+  </article><article class="copy-card">
+    <h3>老板下场是为了什么</h3>
+    <p class=""><em>不是形式，是为了获得判断力。否则会被两种人骗：外部供应商把漂亮演示包装成企业转型方案，一接真实流程就跑不起来；公司里半懂不懂的人会用几个工具就包装成懂 AI 转型，最后做出一堆零散应用，热闹一阵，没有结果。</em></p>
+  </article><article class="copy-card">
+    <h3>案例：傅盛 / 猎豹移动</h3>
+    <p class=""><em>傅盛自己用 OpenClaw 搭了一支智能体团队，让 AI 去做内容、短视频、网站、拜年消息这些任务。这个案例最重要的不是用了哪个工具，而是一个老板亲自把 AI 当团队管理了一遍——他不是听员工汇报 AI 能做什么，而是自己开始拆任务、分角色、看结果。</em></p>
+  </article><article class="copy-card">
+    <h3>老板只有自己下场用过 AI，才会知道未来不是&quot;人用工具&quot;，而是&quot;人管理数字团队&quot;。</h3>
+    
+  </article></div>
+      <div class="method-visual"><figure class="generated-image-panel overlay-panel boss-ai-visual">
+    <img src="images-v4/32-boss-ai-imggen.png" alt="老板下场与AI转型">
+    <div class="visual-overlay">
+    <span class="boss-label">老板主导</span>
+    <span class="agent-label">AI 特种团队执行</span>
+  </div>
+  </figure></div>
+    </div>
+    
+  
+    </div>
+  </section>
+<section class="slide dark method-slide has-stat-strip" data-page="38">
+    <div class="slide-pad">
+      <div class="chrome"><div class="section-nav"><span>AI的道</span><em>TRANSFORMATION</em></div><div>38 / 42</div></div>
+      
+    <header class="title-block">
+    <h1 class="fit-title">第二步：打一场速赢，第一仗不一定要宏大，但一定要真实</h1>
+  </header>
+    <div class="method-grid">
+      <div class="method-copy"><article class="copy-card">
+    <h3>三个原则</h3>
+    <p class=""><em>从业务痛点出发，不从工具出发。先问&quot;公司里最痛、最高频、最耗人的工作是什么&quot;，再问&quot;要上什么工具&quot;。</em></p><p class=""><em>第一仗选高频、重复、可标准化的场景：订单、客服、合同、报表、销售跟进、内容本地化。</em></p><p class=""><em>从提效降本起步，但不要只盯降本。更高价值是用同样的人服务更多客户、跟进更多线索、测试更多市场、覆盖更多国家。</em></p>
+  </article><article class="copy-card">
+    <h3>常见坑</h3>
+    <p class=""><em>AI转型不要上来就做大而全的战略，不要上来就买一堆系统，要先找到真正的业务痛点：重复的流程、干不完的工作、人研究不明白的问题，挑一个场景做深做透</em></p>
+  </article><article class="copy-card">
+    <h3>案例：裕同科技订单数字员工</h3>
+    <p class=""><em>裕同的问题很具体：客户采购单格式复杂：PDF、Excel、邮件、截图，里面是物料编码、数量、单价、币种、交期。过去靠人工录入和核对，又慢又容易错。</em></p><p class=""><em>裕同搭的是订单数字员工：AI 先读采购单，抽字段，再和系统里的物料、价格、交期规则做比对。没问题的同步进系统，有问题的标出来给人处理。</em></p><p class=""><em>这不是一个宏大的 AI 战略，但它解决了一个真实、高频、重复、容易出错的业务问题。</em></p>
+  </article></div>
+      <div class="method-visual"><div class="brand"><img src="images/09-yuto-favicon.png" alt="裕同科技 logo"><span>裕同科技</span></div><figure class="generated-image-panel overlay-panel yuto-speedwin-visual">
+    <img src="images-v4/38-yuto-speedwin-imggen.png" alt="裕同科技订单数字员工">
+    <div class="visual-overlay">
+    <span class="flow-step f1">PO 文件</span><span class="flow-step f2">AI</span><span class="flow-step f3">规则校验</span><span class="flow-step f4">系统</span>
+  </div>
+  </figure></div>
+    </div>
+    <div class="stat-row"><div class="stat-card hot">
+    <div class="stat-value">~20,000 小时</div>
+    <div class="stat-label">一年节约的人工成本</div>
+  </div></div>
+  
+    </div>
+  </section>
+<section class="slide dark method-slide " data-page="39">
+    <div class="slide-pad">
+      <div class="chrome"><div class="section-nav"><span>AI的道</span><em>TRANSFORMATION</em></div><div>39 / 42</div></div>
+      
+    <header class="title-block">
+    <h1 class="fit-title">第三步：前线共创，把 AI 从会议室带到业务现场</h1>
+  </header>
+    <div class="method-grid">
+      <div class="method-copy"><article class="copy-card">
+    <h3>三个原则</h3>
+    <p class=""><em>这是企业 AI 落地的前沿打法。Palantir 很早就在做，OpenAI、微软、很多咨询公司和系统集成公司都在往这个方向走。</em></p><p class=""><em>外部特种兵不是普通工程师，也不是传统顾问。他要把业务痛点翻译成 AI 可以执行的流程，把 AI 能力翻译成一线员工能用的工具，把老板的经营目标翻译成系统里的任务、数据、规则和结果。</em></p><p class=""><em>前线共创不是外包。外包是把需求丢给别人，等别人交付。前线共创是一起打仗，外部团队和老板、业务负责人、一线员工一起做出第一个系统，同时把先进的 AI 工作方式带进公司。</em></p>
+  </article><article class="copy-card">
+    <h3>常见坑</h3>
+    <p class=""><em>业务知道哪里痛，但不知道 AI 怎么做。技术知道怎么接系统，但不理解业务为什么痛。供应商知道怎么演示产品，但不一定愿意帮你改流程。最后：工具买了、培训做了、演示也有了，但没有一个真实业务流程被改变。</em></p>
+  </article><article class="copy-card">
+    <h3>案例：Palantir + Wendy's 供应链</h3>
+    <p class=""><em>Wendy's 是美国连锁快餐品牌，背后的供应链组织服务北美几千家门店。表面上是餐饮生意，底层其实是一个复杂的供应链系统：门店会不会缺货、配送中心怎么调、哪些原料快过期、哪里突然需求上来。</em></p><p class=""><em>Palantir 做的不是一张漂亮大屏，是把订单、库存、配送、供应商、餐厅需求这些数据接起来，让系统帮团队判断哪些地方会缺货、哪些资源可以重新分配、哪些配送中心需要调整。</em></p><p class=""><em>重点不是 Wendy's 用了什么软件，重点是 AI 被放进了真实的供应链决策现场。</em></p>
+  </article></div>
+      <div class="method-visual"><figure class="generated-image-panel overlay-panel frontline-network-visual">
+    <img src="images-v4/34-frontline-network-imggen.png" alt="前线共创网络">
+    <div class="visual-overlay">
+    <span class="frontline-site">业务现场</span>
+    <span class="frontline-loop">反馈闭环</span>
+    <span class="frontline-ai">AI 共创网络</span>
+  </div>
+  </figure></div>
+    </div>
+    
+  
+    </div>
+  </section>
+<section class="slide dark method-slide has-stat-strip" data-page="40">
+    <div class="slide-pad">
+      <div class="chrome"><div class="section-nav"><span>AI的道</span><em>TRANSFORMATION</em></div><div>40 / 42</div></div>
+      
+    <header class="title-block">
+    <h1 class="fit-title">第四步：把能力内化，AI 转型做到最后，不是某个部门用了 AI，而是公司开始自己长出 AI 能力</h1>
+  </header>
+    <div class="method-grid">
+      <div class="method-copy"><article class="copy-card">
+    <h3>三个原则</h3>
+    <p class=""><em>先培训人。不做全员大锅饭培训，先选一批业务感觉强、愿意尝试、能出结果、能带动团队的人，把他们训练成内部 AI 明星员工。</em></p><p class=""><em>再扩场景。第一个速赢跑通后，把方法复制到客服、销售、财务、法务、供应链、营销。一开始从提效降本起步，越往后越要转向增收，甚至用 AI 做新业务。</em></p><p class=""><em>最后建系统。不要一上来重资产搭平台、建中台、做企业大模型。先打场景，跑通以后再沉淀共用能力，多个场景都需要公司资料，沉淀知识库；都要接业务系统，沉淀工具连接；都要跑流程，沉淀工作流。系统不是凭空规划出来的，是从一个个真实场景里长出来的。</em></p>
+  </article><article class="copy-card">
+    <h3>常见坑</h3>
+    <p class=""><em>第一波 AI 项目做完，外部团队一走，内部就停了。通常三个原因：没有培养人 · 没有复制场景 · 没有沉淀系统。真正的 AI 原生，不是外部团队帮你做了几个智能体，而是公司里开始有人能发现新场景、改造新流程、复制新案例。</em></p>
+  </article><article class="copy-card">
+    <h3>案例：美的集团</h3>
+    <p class=""><em>美的把 AI 放进翻译、设计、财务、营销、工厂等多个场景。它长期在做全员数字化和人才培养，也在推动 AI 产品和工具应用、AI 智能体人才认证。背后的组织逻辑是：先让人会用，再让场景扩散，最后让系统沉淀。</em></p>
+  </article></div>
+      <div class="method-visual"><figure class="generated-image-panel"><img src="images-v4/35-capability-diffusion-gen.png" alt="AI能力内化扩散"></figure></div>
+    </div>
+    <div class="stat-row"><div class="stat-card hot">
+    <div class="stat-value">68 个</div>
+    <div class="stat-label">已完成的 AI 智能体</div>
+  </div><div class="stat-card ">
+    <div class="stat-value">1.6 亿元</div>
+    <div class="stat-label">对应节省</div>
+  </div></div>
+  
+    </div>
+  </section>
+<section class="slide dark final-summary" data-page="41">
+    <div class="slide-pad">
+      <div class="chrome"><div class="section-nav"><span>AI的道</span><em>SUMMARY</em></div><div>41 / 42</div></div>
+      
+    <header class="title-block">
+    <h1 class="fit-title">你把 AI 在公司里拔高到什么层级，直接决定了 AI 能释放多大价值</h1>
+  </header>
+    <div class="summary-steps"><span class="active">老板下场</span><span>打一场速赢</span><span>前线共创</span><span>把能力内化</span></div>
+    <div class="summary-copy"><article class="copy-card">
+    <h3>四步法的顺序很重要</h3>
+    <p class=""><em>老板下场 → 打一场速赢 → 前线共创 → 把能力内化。</em></p><p class=""><em>没有第一步，后面都跑偏。没有第二步，公司不会相信 AI 真有用。没有第三步，AI 进不了真实业务现场。没有第四步，外部团队一走，公司就停。</em></p>
+  </article><article class="copy-card">
+    <h3>AI 不是先裁员</h3>
+    <p class=""><em>AI 是先用同样的人赚更多钱。但不会用 AI 放大自己的人，最终一定被时代淘汰。</em></p>
+  </article><article class="copy-card">
+    <h3>内容总结</h3>
+    <p class=""><em>术：一套能进生意的 AI 系统由什么组成。</em></p><p class=""><em>道：老板怎么带公司一步一步把这套系统建起来。</em></p><p class=""><em>接下来：我们当场，把一个真实业务痛点，做成第一个 AI 产品雏形。</em></p>
+  </article></div>
+    <div class="next-band">下一节：现场实战</div>
+  
+    </div>
+  </section>
+<section class="slide orange declaration end-slide" data-page="42">
+    <div class="slide-pad">
+      
+      
+    <div class="catalog">42</div>
+    <div class="statement">
+      <h1 class="fit-title">现场实战</h1>
+      <p>上线你的第一个AI产品：</p><p>老板经营驾驶舱看板</p>
+    </div>
+  
+    </div>
+  </section>
+  </main>
+</div>
+<nav class="deck-controls" id="deckControls" aria-label="Slide navigation"></nav>
+<div class="counter" id="counter"></div>
+<div class="edit-hotzone" aria-hidden="true"></div>
+<button class="edit-toggle" id="editToggle" title="Edit mode (E)">EDIT</button>
+<script>
+
+/* === SLIDE PRESENTATION CONTROLLER === */
+class SlidePresentation {
+  constructor() {
+    this.slides = [...document.querySelectorAll('.slide')];
+    this.stage = document.getElementById('deckStage');
+    this.controls = document.getElementById('deckControls');
+    this.counter = document.getElementById('counter');
+    this.current = 0;
+    this.buildDots();
+    this.setupStageScale();
+    this.setupNav();
+    this.setupEditing();
+    this.fitTitles();
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => this.fitTitles());
+    window.addEventListener('resize', () => this.fitTitles());
+    this.show(0);
+  }
+
+  setupStageScale() {
+    const scale = () => {
+      const factor = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+      const x = (window.innerWidth - 1920 * factor) / 2;
+      const y = (window.innerHeight - 1080 * factor) / 2;
+      this.stage.style.transform = `translate(${x}px, ${y}px) scale(${factor})`;
+    };
+    scale();
+    window.addEventListener('resize', scale);
+  }
+
+  buildDots() {
+    this.controls.innerHTML = this.slides.map((_, i) => `<button aria-label="Go to slide ${i + 1}"></button>`).join('');
+    [...this.controls.children].forEach((btn, i) => btn.addEventListener('click', () => this.show(i)));
+  }
+
+  setupNav() {
+    document.addEventListener('keydown', (e) => {
+      if (e.target.getAttribute('contenteditable') === 'true') return;
+      if (['ArrowRight', 'ArrowDown', ' ', 'PageDown'].includes(e.key)) this.show(this.current + 1);
+      if (['ArrowLeft', 'ArrowUp', 'PageUp'].includes(e.key)) this.show(this.current - 1);
+    });
+    let sx = 0;
+    window.addEventListener('touchstart', (e) => { sx = e.touches[0].clientX; }, { passive: true });
+    window.addEventListener('touchend', (e) => {
+      const dx = e.changedTouches[0].clientX - sx;
+      if (Math.abs(dx) > 50) this.show(this.current + (dx < 0 ? 1 : -1));
+    });
+    let wheelLock = false;
+    window.addEventListener('wheel', (e) => {
+      if (wheelLock || Math.abs(e.deltaY) < 20) return;
+      wheelLock = true;
+      this.show(this.current + (e.deltaY > 0 ? 1 : -1));
+      setTimeout(() => { wheelLock = false; }, 650);
+    }, { passive: true });
+  }
+
+  fitTitles() {
+    document.querySelectorAll('.fit-title').forEach((el) => {
+      el.style.fontSize = '';
+      const max = Number.parseFloat(getComputedStyle(el).fontSize);
+      let size = max;
+      const min = el.closest('.declaration') ? 68 : 38;
+      while (el.scrollWidth > el.clientWidth && size > min) {
+        size -= 2;
+        el.style.fontSize = size + 'px';
+      }
+    });
+  }
+
+  show(index) {
+    this.current = Math.max(0, Math.min(index, this.slides.length - 1));
+    this.slides.forEach((slide, i) => {
+      slide.classList.toggle('active', i === this.current);
+      slide.classList.toggle('visible', i === this.current);
+    });
+    [...this.controls.children].forEach((btn, i) => btn.classList.toggle('active', i === this.current));
+    this.counter.textContent = `${String(this.current + 1).padStart(2, '0')} / ${String(this.slides.length).padStart(2, '0')}`;
+  }
+
+  setupEditing() {
+    const hotzone = document.querySelector('.edit-hotzone');
+    const editToggle = document.getElementById('editToggle');
+    const editable = document.querySelectorAll('h1,h2,h3,p,td,th,.stat-value,.stat-label,.agenda-text,.brand span,.flow-node,.bubble,.agent,.store');
+    let editing = false;
+    let hideTimeout = null;
+    const setEdit = () => {
+      editing = !editing;
+      document.body.classList.toggle('editing', editing);
+      editToggle.classList.toggle('active', editing);
+      editable.forEach((el) => el.setAttribute('contenteditable', editing ? 'true' : 'false'));
+      if (!editing) localStorage.setItem('ai-boss-broadside-edits', document.getElementById('deckStage').innerHTML);
+    };
+    editToggle.addEventListener('click', setEdit);
+    hotzone.addEventListener('click', setEdit);
+    hotzone.addEventListener('mouseenter', () => { clearTimeout(hideTimeout); editToggle.classList.add('show'); });
+    hotzone.addEventListener('mouseleave', () => { hideTimeout = setTimeout(() => { if (!editing) editToggle.classList.remove('show'); }, 400); });
+    editToggle.addEventListener('mouseenter', () => clearTimeout(hideTimeout));
+    editToggle.addEventListener('mouseleave', () => { hideTimeout = setTimeout(() => { if (!editing) editToggle.classList.remove('show'); }, 400); });
+    document.addEventListener('keydown', (e) => {
+      if ((e.key === 'e' || e.key === 'E') && e.target.getAttribute('contenteditable') !== 'true') setEdit();
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        localStorage.setItem('ai-boss-broadside-edits', document.getElementById('deckStage').innerHTML);
+      }
+    });
+  }
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  window.__deck = new SlidePresentation();
+});
+
+</script>
+</body>
+</html>
