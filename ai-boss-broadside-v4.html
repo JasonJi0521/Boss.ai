@@ -291,6 +291,7 @@ strong { color: var(--cream); font-weight: 900; }
 .identity-stack .identity-card h3 { font-size: 42px; }
 .identity-stack .identity-card p { font-size: 24px; line-height: 1.42; margin-bottom: 8px; }
 .identity-stack .role-icon { position: absolute; right: 42px; color: rgba(232,93,38,.38); font-size: 78px; margin: 0; }
+.identity-stack .role-icon svg { width: 86px; height: 86px; display: block; fill: none; stroke: currentColor; stroke-width: 1.45; stroke-linecap: round; stroke-linejoin: round; }
 .speaker-grid { display: grid; grid-template-columns: 1fr 420px 1fr; gap: 46px; align-items: center; height: 760px; }
 .identity-card { border-top: 2px solid var(--orange); padding-top: 28px; }
 .identity-card h3 { font-size: 42px; }
@@ -668,12 +669,26 @@ strong { color: var(--cream); font-weight: 900; }
       </aside>
       <div class="identity-stack">
         <article class="identity-card">
-          <div class="role-icon">&lt;/&gt;</div>
+          <div class="role-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="m8 9-4 3 4 3"></path>
+              <path d="m16 9 4 3-4 3"></path>
+              <path d="m14 5-4 14"></path>
+            </svg>
+          </div>
           <h3>身份一：AI原住民</h3>
           <p class="line ">北大人工智能本科</p><p class="line ">搭建AI自动化出海引擎（谷歌/ Youtube/ TK/ 海外媒体）</p><p class="line ">搭建AI投资系统/个人第二大脑/工程师团队</p><p class="line ">AI社媒账号粉丝5万+</p>
         </article>
         <article class="identity-card">
-          <div class="role-icon">楼</div>
+          <div class="role-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M3 21h18"></path>
+              <path d="M5 21V8l7-4 7 4v13"></path>
+              <path d="M9 21v-7"></path>
+              <path d="M15 21v-7"></path>
+              <path d="M8 10h8"></path>
+            </svg>
+          </div>
           <h3>身份二：管理咨询顾问</h3>
           <p class="line ">国际顶尖咨询公司BCG 5年（跨国企业/主权基金/服装民企/家族产业）</p><p class="line ">国际领先企业AI前向部署（Forward Deploy）</p><p class="line ">本土企业AI转型顾问</p>
         </article>
